@@ -327,7 +327,7 @@ static int verify_server_cert(SSL *ssl, const char *host)
 	int i = -1,j;
 
 	if (SSL_get_verify_result(ssl) != X509_V_OK) {
-		giterr_set(GITERR_SSL, "The SSL certificate is invalid");
+		giterr_set(GITERR_SSL, "the SSL certificate is invalid");
 		return GIT_ECERTIFICATE;
 	}
 
