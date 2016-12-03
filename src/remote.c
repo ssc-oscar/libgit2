@@ -714,10 +714,13 @@ int git_remote_ls(const git_remote_head ***out, size_t *size, git_remote *remote
 {
 	assert(remote);
 
+	//fprintf (stderr, "git_remote_ls %s:%d\n", __FILE__, __LINE__);
+
 	if (!remote->transport) {
 		giterr_set(GITERR_NET, "this remote has never connected");
 		return -1;
 	}
+	//fprintf (stderr, "git_remote_ls %s:%d\n", __FILE__, __LINE__);
 
 	return remote->transport->ls(out, size, remote->transport);
 }
@@ -853,27 +856,37 @@ int git_remote_download(git_remote *remote, const git_strarray *refspecs, const 
 	const git_remote_callbacks *cbs = NULL;
 	const git_strarray *custom_headers = NULL;
 	const git_proxy_options *proxy = NULL;
-
+	fprintf (stderr, "remote_download %s:%d\n", __FILE__, __LINE__);
 	assert(remote);
 
+
+	fprintf (stderr, "remote_download assert %d %s:%d\n", git_remote_connected(remote), __FILE__, __LINE__);
+
 	if (opts) {
-		GITERR_CHECK_VERSION(&opts->callbacks, GIT_REMOTE_CALLBACKS_VERSION, "git_remote_callbacks");
+		GITERR_CHECK_VERSION (&opts->callbacks, GIT_REMOTE_CALLBACKS_VERSION, "git_remote_callbacks");
 		cbs = &opts->callbacks;
 		custom_headers = &opts->custom_headers;
-		GITERR_CHECK_VERSION(&opts->proxy_opts, GIT_PROXY_OPTIONS_VERSION, "git_proxy_options");
-		proxy = &opts->proxy_opts;
+		fprintf (stderr, "remote_download opts %s:%d\n", __FILE__, __LINE__);
+		//GITERR_CHECK_VERSION(&opts->proxy_opts, GIT_PROXY_OPTIONS_VERSION, "git_proxy_options");
+		//proxy = &opts->proxy_opts;
+		fprintf (stderr, "remote_download opts 1 %s:%d\n", __FILE__, __LINE__);
 	}
+
 
 	if (!git_remote_connected(remote) &&
 	    (error = git_remote_connect(remote, GIT_DIRECTION_FETCH, cbs, proxy, custom_headers)) < 0)
 		goto on_error;
+	fprintf (stderr, "remote_download connected %s:%d\n", __FILE__, __LINE__);
 
 	if (ls_to_vector(&refs, remote) < 0)
 		return -1;
+	fprintf (stderr, "remote_download ls %s:%d\n", __FILE__, __LINE__);
 
 	if ((git_vector_init(&specs, 0, NULL)) < 0)
 		goto on_error;
+	fprintf (stderr, "remote_download init %s:%d\n", __FILE__, __LINE__);
 
+	
 	remote->passed_refspecs = 0;
 	if (!refspecs || !refspecs->count) {
 		to_active = &remote->refspecs;
@@ -881,18 +894,21 @@ int git_remote_download(git_remote *remote, const git_strarray *refspecs, const 
 		for (i = 0; i < refspecs->count; i++) {
 			if ((error = add_refspec_to(&specs, refspecs->strings[i], true)) < 0)
 				goto on_error;
+			else
+			  fprintf (stderr, "refspec %ld %s %s:%d\n", i, refspecs->strings[i], __FILE__, __LINE__); 
 		}
 
 		to_active = &specs;
 		remote->passed_refspecs = 1;
 	}
-
+	fprintf (stderr, "remote_download refspecs %p %ld %s:%d\n", refspecs, to_active ->length, __FILE__, __LINE__);	
 	free_refspecs(&remote->passive_refspecs);
 	if ((error = dwim_refspecs(&remote->passive_refspecs, &remote->refspecs, &refs)) < 0)
 		goto on_error;
-
+	fprintf (stderr, "remote_download dwim %ld %s:%d\n", remote->passive_refspecs.length, __FILE__, __LINE__);	
 	free_refspecs(&remote->active_refspecs);
 	error = dwim_refspecs(&remote->active_refspecs, to_active, &refs);
+	fprintf (stderr, "remote_download active refspecs %ld %ld %s:%d\n", remote->active_refspecs.length, to_active ->length, __FILE__, __LINE__);
 
 	git_vector_free(&refs);
 	free_refspecs(&specs);
@@ -906,10 +922,12 @@ int git_remote_download(git_remote *remote, const git_strarray *refspecs, const 
 		remote->push = NULL;
 	}
 
+	fprintf (stderr, "remote_download negotiate %s:%d\n", __FILE__, __LINE__);
 	if ((error = git_fetch_negotiate(remote, opts)) < 0)
-		return error;
-
-	return git_fetch_download_pack(remote, cbs);
+	  return error;
+	fprintf (stderr, "remote_download git_fetch_download_pack %s:%d\n", __FILE__, __LINE__);
+	
+	return git_fetch_download_pack(remote, cbs);	
 
 on_error:
 	git_vector_free(&refs);

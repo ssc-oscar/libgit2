@@ -26,6 +26,7 @@
  */
 GIT_BEGIN_DECL
 
+
 typedef int (*git_remote_rename_problem_cb)(const char *problematic_refspec, void *payload);
 
 /**
@@ -627,6 +628,9 @@ GIT_EXTERN(int) git_push_init_options(
 	git_push_options *opts,
 	unsigned int version);
 
+
+GIT_EXTERN(int) git_get_last (git_remote *remote, char ** out);
+
 /**
  * Download and index the packfile
  *
@@ -818,6 +822,9 @@ GIT_EXTERN(int) git_remote_delete(git_repository *repo, const char *name);
  * or none of them point to HEAD's commit, or an error message.
  */
 GIT_EXTERN(int) git_remote_default_branch(git_buf *out, git_remote *remote);
+
+
+
 
 /** @} */
 GIT_END_DECL

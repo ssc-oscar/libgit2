@@ -51,6 +51,41 @@ static int maybe_want(git_remote *remote, git_remote_head *head, git_odb *odb, g
 	return git_vector_insert(&remote->refs, head);
 }
 
+static char * filter_wants_1 (git_remote *remote)
+{
+	git_remote_head **heads;
+	int error = 0;
+	size_t i, heads_len;
+	git_refspec head;
+	char oidstr[GIT_OID_HEXSZ + 1];
+	char * buff;
+	git_vector_clear(&remote->refs);
+	error = git_refspec__parse(&head, "HEAD", true);
+
+	if (remote->active_refspecs.length == 0) {
+	  if ((error = git_refspec__parse(&head, "HEAD", true)) < 0){
+	    return NULL;
+	  }
+
+	  error = git_refspec__dwim_one(&remote->active_refspecs, &head, &remote->refs);
+	  git_refspec__free(&head);
+	  if (error < 0)
+	    return NULL;
+	}
+	if (git_remote_ls ((const git_remote_head ***)&heads, &heads_len, remote) < 0){
+	  return NULL;
+	}
+	//fprintf (stderr, "filter_wants_1 len=%ld %s:%d\n", heads_len, __FILE__, __LINE__);
+	buff = malloc ((GIT_OID_HEXSZ + 1)*heads_len);
+	for (i = 0; i < heads_len; i++) {
+	  git_oid_tostr (oidstr, sizeof(oidstr), &heads[i]->oid);
+	  sprintf (buff + (GIT_OID_HEXSZ + 1)*i, "%s", oidstr);
+	  if (i>0 && i < heads_len) buff [(GIT_OID_HEXSZ + 1)*i-1] = ';';
+	}
+
+	return buff;
+}
+
 static int filter_wants(git_remote *remote, const git_fetch_options *opts)
 {
 	git_remote_head **heads;
@@ -59,6 +94,8 @@ static int filter_wants(git_remote *remote, const git_fetch_options *opts)
 	git_odb *odb;
 	size_t i, heads_len;
 	git_remote_autotag_option_t tagopt = remote->download_tags;
+	char oidstr[GIT_OID_HEXSZ + 1];
+	fprintf (stderr, "filter_wants %s:%d\n", __FILE__, __LINE__);
 
 	if (opts && opts->download_tags != GIT_REMOTE_DOWNLOAD_TAGS_UNSPECIFIED)
 		tagopt = opts->download_tags;
@@ -83,6 +120,7 @@ static int filter_wants(git_remote *remote, const git_fetch_options *opts)
 		if (error < 0)
 			goto cleanup;
 	}
+	fprintf (stderr, "filter_wants %s:%d\n", __FILE__, __LINE__);
 
 	if (git_repository_odb__weakptr(&odb, remote->repo) < 0)
 		goto cleanup;
@@ -90,8 +128,13 @@ static int filter_wants(git_remote *remote, const git_fetch_options *opts)
 	if (git_remote_ls((const git_remote_head ***)&heads, &heads_len, remote) < 0)
 		goto cleanup;
 
+	fprintf (stderr, "filter_wants heads=%ld %s:%d\n", heads_len, __FILE__, __LINE__);
+	
 	for (i = 0; i < heads_len; i++) {
-		if ((error = maybe_want(remote, heads[i], odb, &tagspec, tagopt)) < 0)
+	  git_oid_tostr (oidstr, sizeof(oidstr), &heads[i]->oid);
+	  fprintf (stderr, "filter_wants head=%ld local=%d id=%s name=%s %s:%d\n", i, heads[i]->local, oidstr,
+		   heads[i]->name, __FILE__, __LINE__);
+	  if ((error = maybe_want(remote, heads[i], odb, &tagspec, tagopt)) < 0)
 			break;
 	}
 
@@ -112,14 +155,21 @@ int git_fetch_negotiate(git_remote *remote, const git_fetch_options *opts)
 
 	remote->need_pack = 0;
 
+	fprintf (stderr, "git_fetch_negotiate %s:%d\n", __FILE__, __LINE__);
+
+	// Get the commit hash for the remote's HEAD and refs/heads/master
 	if (filter_wants(remote, opts) < 0) {
 		giterr_set(GITERR_NET, "Failed to filter the reference list for wants");
 		return -1;
 	}
 
+
 	/* Don't try to negotiate when we don't want anything */
 	if (!remote->need_pack)
 		return 0;
+
+	// in case its not here proceed with negotiation
+	fprintf (stderr, "git_fetch_negotiate need %ld %s:%d\n", remote->refs.length, __FILE__, __LINE__);
 
 	/*
 	 * Now we have everything set up so we can start tell the
@@ -131,15 +181,31 @@ int git_fetch_negotiate(git_remote *remote, const git_fetch_options *opts)
 		remote->refs.length);
 }
 
+
+int git_get_last (git_remote *remote, char ** out)
+{
+  int error = -1;
+  if (!git_remote_connected(remote) &&
+      (error = git_remote_connect(remote, GIT_DIRECTION_FETCH, NULL, NULL, NULL)) < 0)
+    return -1;
+  // Get the commit hash for the remote's HEAD and refs/heads/master
+  *out = filter_wants_1(remote);
+  return 0;
+}
+
+
+
 int git_fetch_download_pack(git_remote *remote, const git_remote_callbacks *callbacks)
 {
 	git_transport *t = remote->transport;
 	git_transfer_progress_cb progress = NULL;
 	void *payload = NULL;
 
+	fprintf (stderr, "git_fetch_download_pack %s:%d\n", __FILE__, __LINE__);
 	if (!remote->need_pack)
 		return 0;
 
+	fprintf (stderr, "git_fetch_download_pack need %s:%d\n", __FILE__, __LINE__);
 	if (callbacks) {
 		progress = callbacks->transfer_progress;
 		payload  = callbacks->payload;
