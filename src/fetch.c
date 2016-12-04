@@ -64,21 +64,26 @@ static char * filter_wants_1 (git_remote *remote)
 
 	if (remote->active_refspecs.length == 0) {
 	  if ((error = git_refspec__parse(&head, "HEAD", true)) < 0){
+            fprintf (stderr, "can't parse refspec %s:%d\n", __FILE__, __LINE__);
 	    return NULL;
 	  }
 
 	  error = git_refspec__dwim_one(&remote->active_refspecs, &head, &remote->refs);
 	  git_refspec__free(&head);
-	  if (error < 0)
+	  if (error < 0){
+            fprintf (stderr, "git_refspec__dwim_one  %s:%d\n", __FILE__, __LINE__);
 	    return NULL;
+          }
 	}
 	if (git_remote_ls ((const git_remote_head ***)&heads, &heads_len, remote) < 0){
+          fprintf (stderr, "problem with git_remote_ls %s:%d\n", __FILE__, __LINE__);
 	  return NULL;
 	}
 	//fprintf (stderr, "filter_wants_1 len=%ld %s:%d\n", heads_len, __FILE__, __LINE__);
 	buff = malloc ((GIT_OID_HEXSZ + 1)*heads_len);
 	for (i = 0; i < heads_len; i++) {
 	  git_oid_tostr (oidstr, sizeof(oidstr), &heads[i]->oid);
+          //fprintf (stderr, "filter_wants_1 %s %s:%d\n", oidstr, __FILE__, __LINE__);
 	  sprintf (buff + (GIT_OID_HEXSZ + 1)*i, "%s", oidstr);
 	  if (i>0 && i < heads_len) buff [(GIT_OID_HEXSZ + 1)*i-1] = ';';
 	}
@@ -186,10 +191,12 @@ int git_get_last (git_remote *remote, char ** out)
 {
   int error = -1;
   if (!git_remote_connected(remote) &&
-      (error = git_remote_connect(remote, GIT_DIRECTION_FETCH, NULL, NULL, NULL)) < 0)
+      (error = git_remote_connect(remote, GIT_DIRECTION_FETCH, NULL, NULL, NULL)) < 0){
+    fprintf(stderr, "could not connect to remote\n");
     return -1;
+  }
   // Get the commit hash for the remote's HEAD and refs/heads/master
-  *out = filter_wants_1(remote);
+  *out = filter_wants_1 (remote);
   return 0;
 }
 
