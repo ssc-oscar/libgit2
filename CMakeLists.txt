@@ -14,7 +14,6 @@
 PROJECT(libgit2 C)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 CMAKE_POLICY(SET CMP0015 NEW)
-
 # Add find modules to the path
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
@@ -610,6 +609,8 @@ TARGET_LINK_LIBRARIES(git2 ${SSH_LIBRARIES})
 TARGET_LINK_LIBRARIES(git2 ${GSSAPI_LIBRARIES})
 TARGET_LINK_LIBRARIES(git2 ${ICONV_LIBRARIES})
 TARGET_OS_LIBRARIES(git2)
+ADD_EXECUTABLE(get_last get_last.c)
+target_link_libraries (get_last git2)
 
 # Workaround for Cmake bug #0011240 (see http://public.kitware.com/Bug/view.php?id=11240)
 # Win64+MSVC+static libs = linker error
