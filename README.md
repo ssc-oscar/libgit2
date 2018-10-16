@@ -60,3 +60,6 @@ obtains the heads of the remote. The next step (comparing remotes to
 what is locally available and sending the latest commits
 corresponding to each updated head is yet to be implemented.
 
+The database backend will take a project as a parameter and return the list of
+heads. These heads needed to be sent to the remote so that it can
+calculate of set of commits (and related trees/blobs) to transfer back.
