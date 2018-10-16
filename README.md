@@ -1,267 +1,62 @@
-libgit2 - the Git linkable library
+Fork of libgit2 to do advanced synchronization with remotes using custom backents
 ==================================
 
-[![Travis Build Status](https://secure.travis-ci.org/libgit2/libgit2.svg?branch=master)](http://travis-ci.org/libgit2/libgit2)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/xvof5b4t5480a2q3/branch/master?svg=true)](https://ci.appveyor.com/project/libgit2/libgit2/branch/master)
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/639/badge.svg)](https://scan.coverity.com/projects/639)
+The problem that is addressed is how to get the latest data from remote git repositories on a large
+scale?
 
-`libgit2` is a portable, pure C implementation of the Git core methods
-provided as a re-entrant linkable library with a solid API, allowing you to
-write native speed custom Git applications in any language with bindings.
+Git cli allows cloning repos where all objects are retrieved, or
+fetch operation where only objects not in the current repo are
+retrieved from remote. Since clooning all public repos in short time
+is rather slow and inefficient we try another approach:
 
-`libgit2` is licensed under a **very permissive license** (GPLv2 with a special
-Linking Exception).  This basically means that you can link it (unmodified)
-with any kind of software without having to release its source code.
-Additionally, the example code has been released to the public domain (see the
-[separate license](examples/COPYING) for more information).
 
-Getting Help
-============
 
-**Join us on Slack**
+1. Detecting updated repos
+1. Detecting new repos
+1. Cloning new repos and extracting objects from the cloned repos
+1. Fetching new objects from updated repos
 
-Visit [slack.libgit2.org](http://slack.libgit2.org/) to sign up, then join
-us in `#libgit2`.  If you prefer IRC, you can also point your client to our
-slack channel once you've registered.
+The figure depicting the process is below
+![workflow](https://raw.githubusercontent.com/ssc-oscar/libgit2/master/UpdateWorkflow.png)
 
-**Getting Help**
+Many ways to detect updated repos. An approach that is forge
+agnostic is to rely on git itself.
 
-If you have questions about the library, please be sure to check out the
-[API documentation](http://libgit2.github.com/libgit2/).  If you still have
-questions, reach out to us on Slack or post a question on 
-[StackOverflow](http://stackoverflow.com/questions/tagged/libgit2) (with the `libgit2` tag).
+get_last get the heads for a lst of git repo urls that are provided
+as a standard input:
+```
+echo https://github.com/ssc-oscar/libgit2 | get_last
+https://github.com/ssc-oscar/libgit2;48a9a056622bbaa5722570217084c6497074c860;4a30c53146e7d1068af6f02dba3ef925878d11b8;0c9320d7e27a02d3b521d004bc561ea50ecdc871;55f207110fac886861b100831305c32c94da01da;ba9bb664f3ed3f230c474ddd8937bd072cc9947f;060649e0f103ff37924140bb6584be9843f666e9;8a29c6e730fa364dde84d6352381fa1ceffd62ea;47cb42da5ad2e0af7946faf053c7ea4fd92ec6da;02d61a3b66a6e5f5bc0154d780daaf5f7b71ccd9;c9b0e0e97bdd3931b797399383b2fd0f3bc8e6c6;9884dd613ede9946c512803c4caf438eb10e2d36;07260228ccf4d7c9d408ae6f9c2fb12f3c475864;800980cc6d1a7d3bd1b68955ca07a52c331043e8;76633215d155dff2d5cda302aa868043b2c7090c;ed194ec8f30d566ccdb24baafe62f5b469aac877;bf804d407e8d1fcff42e1113aa286270ae8925c0;521a8da64c1e84c6a2999d71ad53ee24cdd4a1a1;f55eca167c2d08045dff929adb8ad8b81d8ccc86;9d81509ab16f26dcf2cdf0e4b5c0d0006f30b53a;22f3d3aa6b2500a0c587938f7939c05a28afacf2;c8fe6c0975431e92d3dc4569734f30923b64dd18;7b85608728b38aafd66931ffdcff4e8979dfe3ec;cf2791937edb21173eb283473840be595c5b3a51;d50fd57174f98b7786a5d2ae13df5d98b07e81ee;65d24fd7dd4f881d60ef39a80999d53797626470;ef7903eae7ca70c58733599f02d739040abb2e63;87c181970dbe629befa98aafeee75b2641dacf63;5fe874632df9c70022e2ea47a01876780f8b3d02;4fda5fb1b54ff2fdca9a74300369a9f90f6d6b58;44cbc8dce03b1a7320c751360b1503c5fc5a6dac;a2cb47130ec7662811fe3447f69bae3f176e0362;b4b36a13e5420fbae5973677dd4443770a0256b2;e1d56cf6ec859285e5b736a5057b32b7453e0c54;4625003149d02227f981b53101c7e6be12226382;66cfb039ce7127f853ef7b7791e91679065edd87;d916d508dd6639bc777190f1118595a1d8339284;b04968c145d333e1c4370a2d0a37dc3e6871fed0;b86ef47d2a7f67d44e56e102a54d8f2f2fe19d0c;534123053633c05faff3a2de8cadd7291596bb21;88ab3be6f52a6711d63266a296b6d569dc299019;a80837171d4fb66a8b2eeb5c0fdcad107660dbe7;ccb1b990b0d105a7a9d7cb4d870d8033c47a69f2;1173e0653c966d17dabb3bd7f80ed6c3a9072dd5;7cd53f92f05609628da0a79ae5870b18bea149af;bdd31dd5e832126b2f22fccbe244a1106c241ab0;d55923788c6b43351db2bc7555aef3bea391a1f4;cf7206f8d32a46b348c2b48bea47583c9bd9929d;955c99c21495841f2426733f680bdf3af9c8b593;b92664883999f4d41fcf471cdf627946fafa364d;bb0bd71ab4f404509aefa3be923916e886c9d25d;6367c58cd482288e5cd476bd48d0d4406e3bac7b;9c0e65cb3b14564cd31ba34885731bf5dfa23c1d;097b0761f16ec9552287f4c1f50c2e1124ce6db6;adedac5aba9e4525475fd59d751cd02c6f2b3a4f;002c8e29a1bbe7bf5c07c9c26037d4f6a1ac81a6;e2e7f31ad0c174187f50488d3fafa38f709fb097;9bc8c80ffa3d20e958406a104c521e2aae0f1255;0cd5de3ccd98ed11cf0217b3dbcbcada7e9c11be;df87648ab87f99a7cc53bdabc8aceb01e6771dac;0239eff354e5880ceae079b7ddd04d1b01f664ac;2381d9e4900050f879cedf851c0329440db7c5e3;b859faa61ce3f1fda5c29ac1e72a3d58fee2ede6;031d34b7e8dbfaeb05898e17ba71d0b156c898ec;892abf93157ea576fc3f2ccac118045a6a47247c;6249d960ab2d968acd1a9d87986c81a12e2e96bc;2976dcf8ff061d610d24658ee80bdee937835054;1f84caf0c0e1bb1c1b4b228cec618d4f3ab3e408;9a363d1b266d24f3641dc1cc2aa14be54dcfa3cf;27051d4e3134e53096b10089654a965064a77403;872ee9d81069e116ed07e7994c4f13ad2dc05b7a;93392cdd91d7fb7347969137ada040a03a5bfdbe;d383c39b3bc9a2bd5e68882db9a12e64ccd262a4;4df6ddaa1ac35e4f76eb2362723183b9efc96729;5afe1873488b43a0658bf3816565a19d075e0182;0c7e546fa748334a3fd3413db442132b7d6b166b;0bd774017381a4d7d7e0f4550e0385992c458086;58fe189149a95c1ab25eaae7372f9b1002fc5770;ab2af775ec467ebb328a7374653f247920f258f3;01b3253502a67be5170bc138321ddbf0750a635f;d3789825d3823bdbbebe278172345243618ca541;5b3121eaf0fd4118bf6333af41ee12cd0d7b0e3c;6690884f84e5609d9dcd7ec5ad30fe86371100fb;08a5de44c27c1222d244fa8a039f69de6e4656dd;a65afb757e2675eb8889a9ce1f8809434cdb3af7;d78312cddb971477d8008b7b33b0b9e27c8da022;e476e7beba01efc496ba880f463a8ac61f948270;91fa31fb6f44919d5dcbaa157cfac9fb49dc44df;284283180003a085ce03fb8fac2550a7ac9b9eb0;a03f6caf5c97a5ef8a9ec89c6f81662c12460bb1;02eb1495a5248c8f676e15fd12e1be28d4f22480;9d1f97df1045fa88a9b5c0db202d8896324db987;054a7959e372c99be55748f76fe541f1c0a537ca;ea467e74871830da77bec3e351172a637c139823;d853fb9f24e0fe63b3dce9fbc04fd9cfe17a030b;8ae8ba8d23c080a439f20af29c9cdb62f2b0f169;e8feafe32007ebd16a61820c70abd221655d053c;4cf1ec7cff28da8838a2f0a9fb330e312ea3f963;48a9a056622bbaa5722570217084c6497074c860;c6ad440250d6c438cc622df42ced436199e03dac;9b965c01e06e695e8ee51a1cc080cc1509cd4962;5f8af1bcac3d982adf0bc37a0868e420161dc761;30fcbb2a159d87b14c2e8518063ee2e1d5410af6;73fc8957865818a874b841e4e987f003aca5707d;a2012c43899e6616366b47d7741b3f035e825e84;05e644dd7e0e5694805b25d315b6a0945dcbc4e8;2a9eee6957c1d32330af8600ed45dbae3fcaa9d4;1c33ecc4456186f4cc6570876ed5c47031b7ef1b;02884902a2ba87807aba34d0e9ad134fabb5dfc1;044afa4172ee46acf55f943eb9ea1210017b76d3;e5209da35f5089d292a2c4cd525e0d52a81dffc5;575f107704255254f52d197240d55f2030af0454;f747083efa10abdc1f4a1cbe17efbb05fa8b2da8;680f306d361609a818e8d9ebb382286be084263c;57d70dcb5e9bf66b79e8c6e4146ea50eba28c71a;73ee8ba0715a0c8bc941f52e98e53b227be832c1;e4987b6ce2db08d87463ef9291151ed6cb4839f2;cb3e1334e8a5c3003fa0419442fc06d45508ac31;b83fd07880307106deb0ac7cb0d415d85c27f465;24cce2398f893b77f183425fffd957daa3300c5a;5951445fb3d85bfbe4ccc16ca01210081676e7c5;bbe1957b8c75760c81ce04c7edf6d203513b39f8;e015665142fad7314581063b25202f32631d510e;1bbcb2b279b2a5b8cdf5687daf023cd67cb33ed7;879ebab314fe60cc737d436f62f190260ce13c1a;ef8b7febc5624c265201400001e3d654dea96d83;d88e6e9b3c9dd27644083b157bb28a42d670ed24;a0a1b19ab043f3579aabfb7602b4c4ac4dd69e72;b8be6a30b99f5f73a04a720f915e93c84694151d;6a5fb1f4cc5cb8de311acf1af6b7d8a0ea35876e;d845abe6394afafc88db637f02888d1341f20559;7ff7ca623e9ea8c55cb1dab8ce998dd48c0aeb68;13e5e344a66ede4274d07ff95dcd241156fc2bdc;1e711a39918dcdf3ccd70aa5252baf90dc8475df;b656e5eb4f29e05e5cff2231a368be45db894807;4202eca637d291e3c158068c5d67a77617ae4a2f;7a02e93e02f34befa493405b6287595a0ccaef79;2749ff46d8db3fae270334cace82201d49e38c54;75f703a3580a9b81ead89fe1138e6da858c5ba18;23f8588dde934e8f33c263c6d8359b2ae095f863;c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc;7064938bd5e7ef47bfd79a685a62c1e2649e2ce7;6dcb09b5b57875f334f61aebed695e2e4193db5e;40774549e14e2d9f24b9271173d58b44f82d5254;37172582ec7ff9cb47c43c5d5b2334bf8c547569;52e50c1a80db56b91ce3d99bd546c07b7135f735;3eaf34f4c602b9e155e2f4c6ae26c9250ac37d50;d286dfec3fe5bbf5f4b8ea496116c7c3aaef7991;242a1cea8d66d9ec185044f345b22fec1940178f;5b9fac39d8a76b9139667c26a63e6b3f204b3977;a50086d174658914d4d6462afbc83b02825b1f5b;eddc1f1ed78898a4ca41480045b1d0d5b075e773;4eec2c0d4a332ffb9237a0851578ec388e1f99f4;43cb8b32428b1b29994874349ec22eb5372e152c;28f087c8642ff9c8dd6964e101e6d8539db6281a;ce5e6617b08829d3a473595322a0e67bef9ea645;1589aa0c4d48fb130d8a5db28c45cd3d173cde6d;b4d00c1d2466de3558a7cc6983dce4eb2ee98431;4af08d9f69f151f6362df51d7d7f41527e2af05c;e476e7beba01efc496ba880f463a8ac61f948270;bce9484813ad6aa3d365b11d5f6171e7f33cbbc5;d853fb9f24e0fe63b3dce9fbc04fd9cfe17a030b;04bdd97f2b63793a8720fd19007911e946ba3c55;007f3ff6fa68a95feee4e70f825a49ea0ec9cb2d;b91f28be7d36a94e5e4ccef798ab03ed62a8517c;1ce9ea3ba9b4fa666602d52a5281d41a482cc58b;fb6df50b7f250a4fd8b2fab257f119a5185e9bf5;8ae8ba8d23c080a439f20af29c9cdb62f2b0f169;159061a8ce206b694448313a84387600408f6029;ca2466ff4022cd539e8126ac9746fd25977fc1cc;4d6362b168cdbc7d5b734810f2c81020c2837c4a;f6dedf2c2eb806e2a6fdd4cf31f68386efc2ee0b;2de198b4cec26c2b54c06da4baf88b3f57b9ca86;fe965028885fbd8c62dce08e3a86cd3cb3e3b320;e8feafe32007ebd16a61820c70abd221655d053c;785d8c48ea8725691da3c50e7dae8751523d4c30;c8fe6c0975431e92d3dc4569734f30923b64dd18;211e117a0590583a720c53172406f34186c543bd;8e268168ecfdcc8efe36b58b514d1b93ea3f47f8;4cf1ec7cff28da8838a2f0a9fb330e312ea3f963;a6763ff93aed9a1486c4f84d77151ff57dd4795e;9d1dcca229c624c7551a287963a19e95ba4753b6;b64e11d1fe13a15edbe0f26dc5aaf96aa07f9d91
+```
 
-**Reporting Bugs**
+Each head can be checked if it is already in the database and if new
+commits are found, the repository can be identified as updated.
 
-Please open a [GitHub Issue](https://github.com/libgit2/libgit2/issues) and
-include as much information as possible.  If possible, provide sample code
-that illustrates the problem you're seeing.  If you're seeing a bug only
-on a specific repository, please provide a link to it if possible.
+Forge specific ways to identify updated repos include usage of
+github, gitlab, bitbucket, etc APIs to retrieve the data as noted in
+the chart above.
 
-We ask that you not open a GitHub Issue for help, only for bug reports.
+Identifying new repos always requires use of forge-specific APIs. 
 
-What It Can Do
-==============
 
-`libgit2` is already very usable and is being used in production for many
-applications including the GitHub.com site, in Plastic SCM and also powering
-Microsoft's Visual Studio tools for Git.  The library provides:
+TODO
+____
 
-* SHA conversions, formatting and shortening
-* abstracted ODB backend system
-* commit, tag, tree and blob parsing, editing, and write-back
-* tree traversal
-* revision walking
-* index file (staging area) manipulation
-* reference management (including packed references)
-* config file management
-* high level repository management
-* thread safety and reentrancy
-* descriptive and detailed error messages
-* ...and more (over 175 different API calls)
+With over 1B commits already collected, the new activity represents
+but a small part of the entire database. Hence cloning updated
+(and new) repositories is inefficient and slow.
+40M URLs can be checked in 24 hours using git_last running in
+parallel on 60 servers. The time to clone these would require months
+and three orders of magnitude more more network bandwith and
+storage.
 
-Optional dependencies
-=====================
 
-While the library provides git functionality without the need for
-dependencies, it can make use of a few libraries to add to it:
+What needs to be done is, as in case of git_last, insert
+additional logic to git fetch protocol in order to use
+custum backend that comprises git objects from all repositiories
+and not from a single repository as git fetch assumes.
+git_last implememnts the first step in git fetch protocol which
+obtains the heads of the remote. The next step (comparing remotes to
+what is locally available and sending the latest commits
+corresponding to each updated head is yet to be implemented.
 
-- pthreads (non-Windows) to enable threadsafe access as well as multi-threaded pack generation
-- OpenSSL (non-Windows) to talk over HTTPS and provide the SHA-1 functions
-- LibSSH2 to enable the SSH transport
-- iconv (OSX) to handle the HFS+ path encoding peculiarities
-
-Initialization
-===============
-
-The library needs to keep track of some global state. Call
-
-    git_libgit2_init();
-
-before calling any other libgit2 functions. You can call this function many times. A matching number of calls to
-
-    git_libgit2_shutdown();
-
-will free the resources.  Note that if you have worker threads, you should
-call `git_libgit2_shutdown` *after* those threads have exited.  If you
-require assistance coordinating this, simply have the worker threads call
-`git_libgit2_init` at startup and `git_libgit2_shutdown` at shutdown.
-
-Threading
-=========
-
-See [THREADING](THREADING.md) for information
-
-Conventions
-===========
-
-See [CONVENTIONS](CONVENTIONS.md) for an overview of the external
-and internal API/coding conventions we use.
-
-Building libgit2 - Using CMake
-==============================
-
-`libgit2` builds cleanly on most platforms without any external dependencies.
-Under Unix-like systems, like Linux, \*BSD and Mac OS X, libgit2 expects `pthreads` to be available;
-they should be installed by default on all systems. Under Windows, libgit2 uses the native Windows API
-for threading.
-
-The `libgit2` library is built using [CMake](<https://cmake.org/>) (version 2.8 or newer) on all platforms.
-
-On most systems you can build the library using the following commands
-
-	$ mkdir build && cd build
-	$ cmake ..
-	$ cmake --build .
-
-Alternatively you can point the CMake GUI tool to the CMakeLists.txt file and generate platform specific build project or IDE workspace.
-
-To install the library you can specify the install prefix by setting:
-
-	$ cmake .. -DCMAKE_INSTALL_PREFIX=/install/prefix
-	$ cmake --build . --target install
-
-For more advanced use or questions about CMake please read <https://cmake.org/Wiki/CMake_FAQ>.
-
-The following CMake variables are declared:
-
-- `BIN_INSTALL_DIR`: Where to install binaries to.
-- `LIB_INSTALL_DIR`: Where to install libraries to.
-- `INCLUDE_INSTALL_DIR`: Where to install headers to.
-- `BUILD_SHARED_LIBS`: Build libgit2 as a Shared Library (defaults to ON)
-- `BUILD_CLAR`: Build [Clar](https://github.com/vmg/clar)-based test suite (defaults to ON)
-- `THREADSAFE`: Build libgit2 with threading support (defaults to ON)
-- `STDCALL`: Build libgit2 as `stdcall`. Turn off for `cdecl` (Windows; defaults to ON)
-
-Compiler and linker options
----------------------------
-
-CMake lets you specify a few variables to control the behavior of the
-compiler and linker. These flags are rarely used but can be useful for
-64-bit to 32-bit cross-compilation.
-
-- `CMAKE_C_FLAGS`: Set your own compiler flags
-- `CMAKE_FIND_ROOT_PATH`: Override the search path for libraries
-- `ZLIB_LIBRARY`, `OPENSSL_SSL_LIBRARY` AND `OPENSSL_CRYPTO_LIBRARY`:
-Tell CMake where to find those specific libraries
-
-MacOS X
--------
-
-If you want to build a universal binary for Mac OS X, CMake sets it
-all up for you if you use `-DCMAKE_OSX_ARCHITECTURES="i386;x86_64"`
-when configuring.
-
-Windows
--------
-
-You need to run the CMake commands from the Visual Studio command
-prompt, not the regular or Windows SDK one. Select the right generator
-for your version with the `-G "Visual Studio X" option.
-
-See [the website](http://libgit2.github.com/docs/guides/build-and-link/)
-for more detailed instructions.
-
-Android
--------
-
-Extract toolchain from NDK using, `make-standalone-toolchain.sh` script.
-Optionally, crosscompile and install OpenSSL inside of it. Then create CMake
-toolchain file that configures paths to your crosscompiler (substitute `{PATH}`
-with full path to the toolchain):
-
-	SET(CMAKE_SYSTEM_NAME Linux)
-	SET(CMAKE_SYSTEM_VERSION Android)
-
-	SET(CMAKE_C_COMPILER   {PATH}/bin/arm-linux-androideabi-gcc)
-	SET(CMAKE_CXX_COMPILER {PATH}/bin/arm-linux-androideabi-g++)
-	SET(CMAKE_FIND_ROOT_PATH {PATH}/sysroot/)
-
-	SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-	SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-	SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-
-Add `-DCMAKE_TOOLCHAIN_FILE={pathToToolchainFile}` to cmake command
-when configuring.
-
-Language Bindings
-==================================
-
-Here are the bindings to libgit2 that are currently available:
-
-* C++
-    * libqgit2, Qt bindings <https://projects.kde.org/projects/playground/libs/libqgit2/repository/>
-* Chicken Scheme
-    * chicken-git <https://wiki.call-cc.org/egg/git>
-* D
-    * dlibgit <https://github.com/s-ludwig/dlibgit>
-* Delphi
-    * GitForDelphi <https://github.com/libgit2/GitForDelphi>
-* Erlang
-    * Geef <https://github.com/carlosmn/geef>
-* Go
-    * git2go <https://github.com/libgit2/git2go>
-* GObject
-    * libgit2-glib <https://wiki.gnome.org/Projects/Libgit2-glib>
-* Haskell
-    * hgit2 <https://github.com/jwiegley/gitlib>
-* Java
-    * Jagged <https://github.com/ethomson/jagged>
-* Julia
-    * LibGit2.jl <https://github.com/jakebolewski/LibGit2.jl>
-* Lua
-    * luagit2 <https://github.com/libgit2/luagit2>
-* .NET
-    * libgit2sharp <https://github.com/libgit2/libgit2sharp>
-* Node.js
-    * nodegit <https://github.com/nodegit/nodegit>
-* Objective-C
-    * objective-git <https://github.com/libgit2/objective-git>
-* OCaml
-    * ocaml-libgit2 <https://github.com/fxfactorial/ocaml-libgit2>
-* Parrot Virtual Machine
-    * parrot-libgit2 <https://github.com/letolabs/parrot-libgit2>
-* Perl
-    * Git-Raw <https://github.com/jacquesg/p5-Git-Raw>
-* PHP
-    * php-git <https://github.com/libgit2/php-git>
-* PowerShell
-    * PSGit <https://github.com/PoshCode/PSGit>
-* Python
-    * pygit2 <https://github.com/libgit2/pygit2>
-* R
-    * git2r <https://github.com/ropensci/git2r>
-* Ruby
-    * Rugged <https://github.com/libgit2/rugged>
-* Rust
-    * git2-rs <https://github.com/alexcrichton/git2-rs>
-* Swift
-    * Gift <https://github.com/modocache/Gift>
-* Vala
-    * libgit2.vapi <https://github.com/apmasell/vapis/blob/master/libgit2.vapi>
-
-If you start another language binding to libgit2, please let us know so
-we can add it to the list.
-
-How Can I Contribute?
-==================================
-
-We welcome new contributors!  We have a number of issues marked as
-["up for grabs"](https://github.com/libgit2/libgit2/issues?q=is%3Aissue+is%3Aopen+label%3A%22up+for+grabs%22)
-and
-["easy fix"](https://github.com/libgit2/libgit2/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3A%22easy+fix%22)
-that are good places to jump in and get started.  There's much more detailed
-information in our list of [outstanding projects](PROJECTS.md).
-
-Please be sure to check the [contribution guidelines](CONTRIBUTING.md) to
-understand our workflow, and the libgit2 [coding conventions](CONVENTIONS.md).
-
-License
-==================================
-
-`libgit2` is under GPL2 **with linking exception**. This means you can link to
-and use the library from any program, proprietary or open source; paid or
-gratis.  However, if you modify libgit2 itself, you must distribute the
-source to your modified version of libgit2.
-
-See the [COPYING file](COPYING) for the full license text.
