@@ -38,22 +38,38 @@ static void create_initial_commit (git_repository *repo){
   git_signature_free(sig);
 }
 
+
+
+
 int main(int argc, char *argv[]){
   git_repository *repo = NULL;
-  struct opts o = { 1, 0, 0, 0, GIT_REPOSITORY_INIT_SHARED_UMASK, 0, 0, 0 };
-
-  git_libgit2_init();
-  git_repository_init(&repo, "/tmp/aa", 0);
-  o.dir = git_repository_path(repo);
-  printf("Initialized empty Git repository in %s\n", o.dir);
   
 
+  if (0){
+  git_libgit2_init();
+  git_repository_init(&repo, "/tmp/aa", 0);
+  //dir = git_repository_path(repo);
+  //printf("Initialized empty Git repository in %s\n", dir);
+  }
 
+  char *l0 = NULL;
+  size_t size = 0;
+  while (getline (&l0, &size, stdin)>=0){
+    if (strncmp (l0, "COMMIT;", 7) == 0){
+      l0[strlen(l0)-1]=0;
+      int len = atoi (l0+48);
+      char * buff = (char*)malloc(len+1);
+      fread(buff, len, 1, stdin);
+      printf ("%s\n",buff);
+      free (buff); 
+    }
+  }
+  if (0){
   create_initial_commit(repo);
   //  printf("Created empty initial commit\n");
   git_repository_free(repo);
   git_libgit2_shutdown();
-
+  }
   return 0;
 }
 
