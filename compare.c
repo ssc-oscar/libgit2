@@ -55,6 +55,24 @@ static void print_commit(git_commit *commit)
     //printf("%s;%s;%s;%ld\n", cidstr, tidstr, buf+1, git_commit_time(commit));
 }
 
+void get_commits(git_commit *commit, long old_time, char *old_head)
+{
+    print_commit(commit);
+    size_t i, parent_count = git_commit_parentcount(commit);
+    for (i = 0; i < parent_count; i++) {
+        char oidstr[GIT_OID_HEXSZ + 1];
+        git_oid_tostr (oidstr, sizeof(oidstr), git_commit_parent_id(commit, i));
+        if(strcmp(oidstr, old_head) == 0) {
+            return;
+        }
+        git_commit *parent = NULL;
+        git_commit_parent(&parent, commit, 0);
+        if(git_commit_time(parent) > old_time) {
+            get_commits(parent, old_time, old_head);
+        }
+    }
+    return;
+}
 
 /*
  *input: the path, the new HEAD(commits) and the old HEAD(commits) in the Database,They are in the same line
@@ -110,6 +128,9 @@ int main(int argc, char **argv)
         
         /*get new commits*/
         long old_time = git_commit_time(old_commit);
+        /*using Depth First Searrch to get new commits*/
+        get_commits(commit, old_time, old_head);
+        /*
         while((git_commit_time(commit) >= old_time ) && git_commit_parentcount(commit)) {
             print_commit(commit);
             size_t i, parent_count = git_commit_parentcount(commit);
@@ -131,6 +152,7 @@ int main(int argc, char **argv)
             git_commit_parent(&parent, commit, 0);
             commit = parent;
         }
+        */
     }
     git_remote_delete(repo, "origin");
     git_repository_free (repo);
