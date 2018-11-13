@@ -612,6 +612,7 @@ TARGET_OS_LIBRARIES(git2)
 ADD_EXECUTABLE(get_last get_last.c)
 ADD_EXECUTABLE(init init.c)
 target_link_libraries (get_last git2)
+target_link_libraries (init git2)
 
 # Workaround for Cmake bug #0011240 (see http://public.kitware.com/Bug/view.php?id=11240)
 # Win64+MSVC+static libs = linker error
