@@ -54,8 +54,8 @@ RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && mkdir $HOME/.ssh && chown 
 COPY id_rsa_gcloud.pub $HOME/.ssh/authorized_keys
 RUN chown -R $NB_USER:users $HOME && chmod -R og-rwx $HOME/.ssh
 
-RUN set -x && cd /src \
+RUN set -x && mkdir /src && cd /src \
     && git clone https://github.com/ssc-oscar/libgit2 \ 
-    && mkdir -p /src/libgit2/build && cd /src/libgit2/build \\
-    && cmake .. -DBUILD_SHARED_LIBS=OFF \\
+    && mkdir -p /src/libgit2/build && cd /src/libgit2/build \
+    && cmake .. -DBUILD_SHARED_LIBS=OFF \
     && cmake --build .         
