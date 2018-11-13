@@ -20,7 +20,7 @@ RUN apt-get update && \
     git \
     curl lsb-release \
     vim-runtime tmux  zsh zip build-essential \
-    cmake	 
+    cmake build-essentials	 
 
 
 #Google Cloud 
