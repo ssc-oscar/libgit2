@@ -13,6 +13,7 @@ RUN apt-get update && \
     libssl-dev \
     libcurl4-openssl-dev \
     openssh-server \
+    libbz2-dev \
     lsof sudo \
     sssd \
     sssd-tools \
@@ -65,6 +66,6 @@ RUN chown -R $NB_USER:users $HOME && chmod -R og-rwx $HOME/.ssh
 RUN set -x && cd /src \
     && git clone https://github.com/ssc-oscar/libgit2 \ 
     && mkdir -p /src/libgit2/build && cd /src/libgit2/build \
-    && cmake ..  \
+    && cmake .. -DCMAKE_INSTALL_PREFIX=/usr/bin \
     && cmake --build . \
     && make install        
