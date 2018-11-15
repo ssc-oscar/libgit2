@@ -48,7 +48,7 @@ RUN curl -L https://github.com/docker/machine/releases/download/v0.14.0/docker-m
 
 RUN mkdir /src 
 COPY Compress-LZF-3.41.tar.gz tokyocabinet-perl-1.34.tar.gz tokyocabinet-1.4.48.tar.gz  /src/ 
-COPY startshell.sh captureObjects.sh  cleanBlb.perl  gitListSimp.sh  grabGitI.perl /bin/ 
+COPY startshell.sh captureObjects.sh  cleanBlb.perl  gitListSimp.sh  grabGitI.perl /usr/bin/ 
     
 RUN cd /src && tar xzf Compress-LZF-3.41.tar.gz && tar xzf tokyocabinet-perl-1.34.tar.gz && tar xzf tokyocabinet-1.4.48.tar.gz \
     && cd /src/Compress-LZF-3.41 && perl Makefile.PL && make && make install \
@@ -66,6 +66,6 @@ RUN chown -R $NB_USER:users $HOME && chmod -R og-rwx $HOME/.ssh
 RUN set -x && cd /src \
     && git clone https://github.com/ssc-oscar/libgit2 \ 
     && mkdir -p /src/libgit2/build && cd /src/libgit2/build \
-    && cmake .. -DCMAKE_INSTALL_PREFIX=/usr/bin \
+    && cmake .. -DCMAKE_INSTALL_PREFIX=/usr \
     && cmake --build . \
     && make install        
