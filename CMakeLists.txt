@@ -625,7 +625,6 @@ target_link_libraries (grabft git2)
 ADD_EXECUTABLE(grabtag grabtag.c common.c)
 target_link_libraries (grabtag git2)
 
-
 # Workaround for Cmake bug #0011240 (see http://public.kitware.com/Bug/view.php?id=11240)
 # Win64+MSVC+static libs = linker error
 IF(MSVC AND GIT_ARCH_64 AND NOT BUILD_SHARED_LIBS)
