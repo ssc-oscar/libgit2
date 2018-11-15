@@ -68,4 +68,5 @@ RUN set -x && cd /src \
     && mkdir -p /src/libgit2/build && cd /src/libgit2/build \
     && cmake .. -DCMAKE_INSTALL_PREFIX=/usr \
     && cmake --build . \
-    && make install        
+    && make install        \
+    && chmod +x /usr/bin/classify  /usr/bin/grab* /usr/bin/get_last /usr/bin/get_new_commits
