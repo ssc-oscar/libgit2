@@ -45,7 +45,14 @@ RUN curl -L https://github.com/docker/machine/releases/download/v0.14.0/docker-m
     chmod +x /usr/local/bin/docker-machine
 
 
-COPY startshell.sh /bin/ 
+RUN mkdir /src 
+COPY Compress-LZF-3.41.tar.gz tokyocabinet-perl-1.34.tar.gz tokyocabinet-1.4.48.tar.gz  /src/ 
+COPY startshell.sh captureObjects.sh  cleanBlb.perl  gitListSimp.sh  grabGitI.perl /bin/ 
+    
+RUN cd /src && tar xzf Compress-LZF-3.41.tar.gz && tar xzf tokyocabinet-perl-1.34.tar.gz && tar xzf tokyocabinet-1.4.48.tar.gz \
+    && cd /src/Compress-LZF-3.41 && perl Makefile.PL && make && make install \
+    && cd /src/tokyocabinet-1.4.48 && ./configure && make && make install \
+    && cd /src/tokyocabinet-perl-1.34 && perl Makefile.PL && make && make install
 
 ENV NB_USER jovyan
 ENV NB_UID 1000
@@ -54,8 +61,10 @@ RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && mkdir $HOME/.ssh && chown 
 COPY id_rsa_gcloud.pub $HOME/.ssh/authorized_keys
 RUN chown -R $NB_USER:users $HOME && chmod -R og-rwx $HOME/.ssh
 
-RUN set -x && mkdir /src && cd /src \
+
+RUN set -x && cd /src \
     && git clone https://github.com/ssc-oscar/libgit2 \ 
     && mkdir -p /src/libgit2/build && cd /src/libgit2/build \
-    && cmake .. -DBUILD_SHARED_LIBS=OFF \
-    && cmake --build .         
+    && cmake ..  \
+    && cmake --build . \
+    && make install        
