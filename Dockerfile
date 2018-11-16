@@ -17,7 +17,7 @@ RUN apt-get update && \
     lsof sudo \
     sssd \
     sssd-tools \
-    vim \
+    vim pkg-config libssh2-1-dev \
     git \
     curl lsb-release \
     vim-runtime tmux  zsh zip build-essential \
