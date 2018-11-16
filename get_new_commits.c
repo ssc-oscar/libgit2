@@ -96,10 +96,12 @@ int main(int argc, char **argv)
             printf("%s: %s\n", name, cmsg);
             git_commit_free(wcommit);
         }
-        git_revwalk_free(walk);   
+        git_revwalk_free(walk);
+        git_repository_free(repo);
+        git_remote_free(remote);   
     }
 
-    git_repository_free (repo);
+    
     git_libgit2_shutdown ();
     
     return 0;
