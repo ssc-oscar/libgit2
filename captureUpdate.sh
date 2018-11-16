@@ -1,12 +1,16 @@
 #!/bin/bash
 
 repo=$1
+ohead=$2
 rp0=$(echo $repo|sed 's|.*//||')
 rpn=$(echo $rp0|sed 's|[^/]*/||')
 rpb=$(echo $rp0|sed 's|/[^/]*/[^/]*$||')
 rpp=$(echo $rpn|sed 's|/|_|')
-git clone --mirror $repo $rpp
-/usr/bin/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> $rpp.olist.err | gzip > $rpp.olist.gz
+
+head=$(echo $repo | /usr/bin/get_last | cut -d\; -f2)
+echo $rpp,$repo,$ohead,$head | /usr/bin/get_new_commits 
+
+/usr/bin/gitListSimp.sh $rpp/.git | /usr/bin/classify $rpp/.git 2>> $rpp.olist.err | gzip > $rpp.olist.gz
 #now check
 zcat $rpp.olist.gz | grep ';commit;' | cut -d\; -f3 | gzip > $rpp.cs
 #zcat $rpp.olist.gz | /usr/bin/cleanBlb.perl | /usr/bin/hasObj.perl | gzip > $rpp.todo
