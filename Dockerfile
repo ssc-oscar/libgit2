@@ -48,7 +48,7 @@ RUN curl -L https://github.com/docker/machine/releases/download/v0.14.0/docker-m
 
 RUN mkdir /src 
 COPY Compress-LZF-3.41.tar.gz tokyocabinet-perl-1.34.tar.gz tokyocabinet-1.4.48.tar.gz  /src/ 
-COPY startshell.sh captureObjects.sh  cleanBlb.perl  gitListSimp.sh  grabGitI.perl /usr/bin/ 
+COPY startshell.sh captureObjects.sh  cleanBlb.perl gitList.sh gitListSimp.sh  grabGitI.perl /usr/bin/ 
     
 RUN cd /src && tar xzf Compress-LZF-3.41.tar.gz && tar xzf tokyocabinet-perl-1.34.tar.gz && tar xzf tokyocabinet-1.4.48.tar.gz \
     && cd /src/Compress-LZF-3.41 && perl Makefile.PL && make && make install \
