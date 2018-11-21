@@ -20,5 +20,5 @@ rm $rpp.todo $rpp.olist.gz
 rm -rf $rpp
 tar czf $rpp.tgz $rpp.*
 #copy stuff back
-scp $rpp.tgz -p443 audris@da0.eecs.utk.edu:/data/cloud
+scp $rpp.tgz -pP443 audris@localhost:/data/cloud
 rm $rpp.*
