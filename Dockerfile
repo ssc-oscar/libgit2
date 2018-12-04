@@ -48,15 +48,16 @@ RUN curl -L https://github.com/docker/machine/releases/download/v0.14.0/docker-m
 
 RUN mkdir /src 
 COPY Compress-LZF-3.41.tar.gz tokyocabinet-perl-1.34.tar.gz tokyocabinet-1.4.48.tar.gz  /src/ 
-COPY captureUpdate.sh startshell.sh captureObjects.sh cleanBlb.perl gitList.sh gitListSimp.sh  grabGitI.perl /usr/bin/ 
+COPY cleanBlb.perl *.sh  grabGitI.perl /usr/bin/ 
     
 RUN cd /src && tar xzf Compress-LZF-3.41.tar.gz && tar xzf tokyocabinet-perl-1.34.tar.gz && tar xzf tokyocabinet-1.4.48.tar.gz \
     && cd /src/Compress-LZF-3.41 && perl Makefile.PL && make && make install \
     && cd /src/tokyocabinet-1.4.48 && ./configure && make && make install \
     && cd /src/tokyocabinet-perl-1.34 && perl Makefile.PL && make && make install
 
-ENV NB_USER jovyan
-ENV NB_UID 1000
+
+ENV NB_USER audris
+ENV NB_UID 50954
 ENV HOME /home/$NB_USER
 RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && mkdir $HOME/.ssh && chown -R $NB_USER:users $HOME 
 COPY id_rsa_gcloud.pub $HOME/.ssh/authorized_keys
