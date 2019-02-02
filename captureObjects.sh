@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#docker run -d --name gather -p443:22 -v /home/audris:/data -w /home/audris swsc/gather /bin/startsvc.sh audris
+#head cgit.kde.org.heads.get | while read r; do rpp=$(echo $r| sed 's|.*kde.org/||;s|/|_|;s|^|kde_|'); git clone --mirror $r $rpp; /usr/bin/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> $rpp.olist.err | gzip > $rpp.olist.gz; done
+
 repo=$1
 rp0=$(echo $repo|sed 's|.*//||')
 rpn=$(echo $rp0|sed 's|[^/]*/||')
