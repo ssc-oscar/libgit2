@@ -18,6 +18,7 @@ int main(int argc, char **argv)
     git_repository *repo;
     git_remote *remote;
     git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
+    const git_transfer_progress *stats;
 
     while(getline(&l0, &size, stdin) >= 0) {
         
@@ -50,6 +51,7 @@ int main(int argc, char **argv)
             if(error < 0) {
                 printf("add remote error!\n");
             }
+            
         }
         /*if the dir exist, open the repository, add remote*/
         else {
@@ -77,7 +79,16 @@ int main(int argc, char **argv)
         if(error < 0) {
             printf("fetch error!\n");
         }
-
+        //const git_transfer_progress *stats;
+        stats = git_remote_stats(remote);
+        printf("received bytes: %lu\n", stats->received_bytes);
+        if (stats->local_objects > 0) {
+            printf("\rReceived %d/%d objects in %lu bytes (used %d local objects)\n",
+                stats->indexed_objects, stats->total_objects, stats->received_bytes, stats->local_objects);
+        } else{
+            printf("\rReceived %d/%d objects in %lu bytes\n",
+            stats->indexed_objects, stats->total_objects, stats->received_bytes);
+        }
         //get new commits
         git_oid new_oid, old_oid, oid;
         git_oid_fromstr(&new_oid, new_head);
@@ -96,10 +107,12 @@ int main(int argc, char **argv)
             printf("%s: %s\n", name, cmsg);
             git_commit_free(wcommit);
         }
-        git_revwalk_free(walk);   
+        git_revwalk_free(walk);
+        git_repository_free(repo);
+        git_remote_free(remote);   
     }
 
-    git_repository_free (repo);
+    
     git_libgit2_shutdown ();
     
     return 0;
