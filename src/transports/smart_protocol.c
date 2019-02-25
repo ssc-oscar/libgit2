@@ -597,9 +597,9 @@ int git_smart__download_pack(
 		error = no_sideband(t, writepack, buf, stats);
 		goto done;
 	}
-
-	FILE *outfile;
-	outfile = fopen("packfile", "wb");
+	FILE *outfile, *outputidx;
+   outfile = fopen("packfile", "wb");
+   outfilei = fopen("packfilei", "w");
 	do {
 		git_pkt *pkt = NULL;
 
@@ -625,16 +625,14 @@ int git_smart__download_pack(
 				}
 			} else if (pkt->type == GIT_PKT_DATA) {
 				git_pkt_data *p = (git_pkt_data *) pkt;
-
 				if (p->len) {
 					error = writepack->append(writepack, p->data, p->len, stats);
-					printf("%d\n", p->len);
+					fprintf(outfilei, "%d\n", p->len);
 					if(error < 0) {
 						fprintf(stderr, "writepack append error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
 					}
 					fwrite(p->data, sizeof(char), p->len, outfile);
-				}
-					
+				}					
 			} else if (pkt->type == GIT_PKT_FLUSH) {
 				/* A flush indicates the end of the packfile */
 				git__free(pkt);
