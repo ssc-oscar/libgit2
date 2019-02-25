@@ -15,6 +15,9 @@
 #include "remote.h"
 #include "util.h"
 
+#include<stdio.h>
+#include<stdlib.h>
+
 #define NETWORK_XFER_THRESHOLD (100*1024)
 /* The minimal interval between progress updates (in seconds). */
 #define MIN_PROGRESS_UPDATE_INTERVAL 0.5
@@ -355,8 +358,22 @@ int git_smart__negotiate_fetch(git_transport *transport, git_repository *repo, c
 	 * objects. We give up if we haven't found an answer in the
 	 * first 256 we send.
 	 */
+	/*
+	error = git_revwalk_next(&oid, walk);
+	if(error < 0) {
+		goto on_error;
+	}
+	*/
+	
+	error = git_reference_name_to_id(&oid, repo, "refs/heads/master");
+	if(error < 0) {
+		fprintf(stderr, "git_reference_name_to_id error: %s:%d\n", __FILE__, __LINE__);
+		goto on_error;
+	}
+	
 	i = 0;
 	while (i < 256) {
+		/*
 		error = git_revwalk_next(&oid, walk);
 
 		if (error < 0) {
@@ -365,6 +382,7 @@ int git_smart__negotiate_fetch(git_transport *transport, git_repository *repo, c
 
 			goto on_error;
 		}
+		*/
 
 		git_pkt_buffer_have(&oid, &data);
 		i++;
@@ -565,8 +583,10 @@ int git_smart__download_pack(
 	}
 
 	if ((error = git_repository_odb__weakptr(&odb, repo)) < 0 ||
-		((error = git_odb_write_pack(&writepack, odb, transfer_progress_cb, progress_payload)) != 0))
-		goto done;
+		((error = git_odb_write_pack(&writepack, odb, transfer_progress_cb, progress_payload)) != 0)) {
+			fprintf(stderr, "odb open or write error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
+			goto done;
+		}
 
 	/*
 	 * If the remote doesn't support the side-band, we can feed
@@ -578,6 +598,8 @@ int git_smart__download_pack(
 		goto done;
 	}
 
+	FILE *outfile;
+	outfile = fopen("packfile", "wb");
 	do {
 		git_pkt *pkt = NULL;
 
@@ -597,17 +619,30 @@ int git_smart__download_pack(
 				if (t->progress_cb) {
 					git_pkt_progress *p = (git_pkt_progress *) pkt;
 					error = t->progress_cb(p->data, p->len, t->message_cb_payload);
+					if(error < 0) {
+						fprintf(stderr, "progress_cb error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
+					}
 				}
 			} else if (pkt->type == GIT_PKT_DATA) {
 				git_pkt_data *p = (git_pkt_data *) pkt;
 
-				if (p->len)
+				if (p->len) {
 					error = writepack->append(writepack, p->data, p->len, stats);
+					printf("%d\n", p->len);
+					if(error < 0) {
+						fprintf(stderr, "writepack append error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
+					}
+					fwrite(p->data, sizeof(char), p->len, outfile);
+				}
+					
 			} else if (pkt->type == GIT_PKT_FLUSH) {
 				/* A flush indicates the end of the packfile */
 				git__free(pkt);
 				break;
 			}
+		}
+		else {
+			fprintf(stderr, "recv pkt error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
 		}
 
 		git__free(pkt);
@@ -616,6 +651,7 @@ int git_smart__download_pack(
 
 	} while (1);
 
+	fclose(outfile);
 	/*
 	 * Trailing execution of transfer_progress_cb, if necessary...
 	 * Only the callback through the npp datastructure currently
@@ -632,6 +668,9 @@ int git_smart__download_pack(
 	}
 
 	error = writepack->commit(writepack, stats);
+	if(error < 0) {
+		fprintf(stderr, "writepack commit error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
+	}
 
 done:
 	if (writepack)
