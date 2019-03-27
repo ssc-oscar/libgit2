@@ -22,6 +22,8 @@
 
 git_mutex git__mwindow_mutex;
 
+char *packfile_name = "packfile";
+
 #define MAX_SHUTDOWN_CB 8
 
 static git_global_shutdown_fn git__shutdown_callbacks[MAX_SHUTDOWN_CB];
