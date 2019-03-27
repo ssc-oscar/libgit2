@@ -599,7 +599,7 @@ int git_smart__download_pack(
 		goto done;
 	}
 	FILE *outfile;
-    outfile = fopen(packfile_name, "wb");
+  outfile = fopen(packfile_name, "wb");
 	do {
 		git_pkt *pkt = NULL;
 
@@ -627,7 +627,6 @@ int git_smart__download_pack(
 				git_pkt_data *p = (git_pkt_data *) pkt;
 				if (p->len) {
 					error = writepack->append(writepack, p->data, p->len, stats);
-					
 					if(error < 0) {
 						fprintf(stderr, "writepack append error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
 					}
