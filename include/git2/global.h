@@ -25,6 +25,8 @@ GIT_BEGIN_DECL
  */
 GIT_EXTERN(int) git_libgit2_init(void);
 
+GIT_EXTERN(char *) packfile_name;
+
 /**
  * Shutdown the global state
  *

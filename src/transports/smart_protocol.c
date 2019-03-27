@@ -17,6 +17,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<unistd.h>
 
 #define NETWORK_XFER_THRESHOLD (100*1024)
 /* The minimal interval between progress updates (in seconds). */
@@ -597,9 +598,8 @@ int git_smart__download_pack(
 		error = no_sideband(t, writepack, buf, stats);
 		goto done;
 	}
-	FILE *outfile, *outputidx;
-   outfile = fopen("packfile", "wb");
-   outfilei = fopen("packfilei", "w");
+	FILE *outfile;
+  outfile = fopen(packfile_name, "wb");
 	do {
 		git_pkt *pkt = NULL;
 
@@ -627,7 +627,6 @@ int git_smart__download_pack(
 				git_pkt_data *p = (git_pkt_data *) pkt;
 				if (p->len) {
 					error = writepack->append(writepack, p->data, p->len, stats);
-					fprintf(outfilei, "%d\n", p->len);
 					if(error < 0) {
 						fprintf(stderr, "writepack append error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
 					}
@@ -664,12 +663,14 @@ int git_smart__download_pack(
 		if (error != 0)
 			goto done;
 	}
-
+	
+	/*
 	error = writepack->commit(writepack, stats);
 	if(error < 0) {
 		fprintf(stderr, "writepack commit error: %s %s %d\n", giterr_last()->message, __FILE__, __LINE__);
 	}
-
+	*/
+	
 done:
 	if (writepack)
 		writepack->free(writepack);
