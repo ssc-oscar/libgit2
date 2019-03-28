@@ -611,6 +611,8 @@ TARGET_LINK_LIBRARIES(git2 ${ICONV_LIBRARIES})
 TARGET_OS_LIBRARIES(git2)
 
 ADD_EXECUTABLE(get_last get_last.c)
+ADD_EXECUTABLE(batch_fetch batch_fetch.c)
+target_link_libraries (batch_fetch git2)
 target_link_libraries (get_last git2)
 ADD_EXECUTABLE(get_new_commits get_new_commits.c)
 target_link_libraries (get_new_commits git2)
