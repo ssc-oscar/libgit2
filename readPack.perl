@@ -126,7 +126,7 @@ while (length ($str1) > 6){
 	my $mult = 1;
 	for my $i (0..$#a){
 	  $mult = $mult * 128 if $i > 0;
-	  $len1 += $a[$i] * $mult;
+	  $len1 += $a[$i-$#a] * $mult;
 	}
 	print "@a\n";
 	my ($inf, $status) = new Compress::Raw::Zlib::Inflate( -Bufsize => 300 );
