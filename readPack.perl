@@ -22,9 +22,12 @@ $offset += 4+4;
 my $left = length ($str1); 
 print "rl=$rl s=$s $m version=$v nObj=$no $sha left=$left\n";
 
-
+my %o2obj; 
+my %o2objT; 
+my $oo = $offset;
 while (length ($str1) > 6){
-  print "offset = $offset\n";
+  $oo = $offset;
+  print "offset = $oo\n";
   my ($t0, $str0) = unpack "C a*", $str1;
   $offset += 1;
   $str1 = $str0;
@@ -50,6 +53,7 @@ while (length ($str1) > 6){
     $len1 += $a[$i] * $mult;
     #printf "i=%d %b %d\n", $i, $a[$i], $a[$i]*$mult;
   }
+  $o2objT{$oo} = $t0;
   printf "type=%b length=%d  ", $t0, $len1;
   if ($t0 < 5){
     my ($inf, $status) = new Compress::Raw::Zlib::Inflate( -Bufsize => 300 );
@@ -61,6 +65,7 @@ while (length ($str1) > 6){
     $offset += $pre-$left;
     print "length Left=$left status=$status -- uncompressed length = ".(length($code))."\n";
     print "$code\n";
+    $o2obj{$oo} = $code;
   }else{
     if ($t0 == 7){
       print "left1 = ".(length($str1))."\n";
@@ -70,6 +75,7 @@ while (length ($str1) > 6){
       $str1 = substr($str1, 20, length($str1)-20);
       $offset += 20;
       my ($inf, $status) = new Compress::Raw::Zlib::Inflate( -Bufsize => 300 );
+      
       my $code;
       my $pre = length($str1);
       $status = $inf->inflate($str1, $code);
@@ -107,11 +113,13 @@ while (length ($str1) > 6){
 	  print "add=$nadd\n";
 	}
       }
+      $o2obj{$oo} = "$sha"; #add changes
     }else{
       if ($t0 == 6){
         print "left1 = ".(length($str1))."\n";
         my $sz0 = unpack "C a*", $str1;
         $offset += 1;
+	$str1 = substr ($str1, 1, length($str1)-1);
 	$h = $sz0 & 128;
 	my @a = ($sz0 & 127);
 	while ($h){
@@ -125,10 +133,10 @@ while (length ($str1) > 6){
 	my $len1 = 0;
 	my $mult = 1;
 	for my $i (0..$#a){
-	  $mult = $mult * 128 if $i > 0;
-	  $len1 += $a[$i-$#a] * $mult;
+	  $len1 = $len1 << 7 if $i > 0;
+	  $len1 += $a[$i]+1;
 	}
-	print "@a\n";
+	print "a=@a\n";
 	my ($inf, $status) = new Compress::Raw::Zlib::Inflate( -Bufsize => 300 );
 	my $code;
         my $pre = length($str1);
@@ -137,6 +145,10 @@ while (length ($str1) > 6){
 	$offset += $pre - $left;
 	print "look backwards=".($len1)." length Left=".(length($str1))." status=$status -- uncompressed length = ".(length($code))."\n";
 	#exit();
+	my $objOf = $oo - $len1 + 1;
+	print "nothing at offset $objOf\n" if !defined $o2obj{$objOf};
+	my $obj = $o2obj{$objOf};
+	print "pobject=$o2objT{$objOf}:$obj\n";
 	my ($do, $rest) = unpack "C a*", $code;
 	my $add = ($do & 0b10000000) == 0;
 	printf "add=%.8b do=%b do=%d lCode=%d\n", $add, $do, $do, length ($rest);
@@ -150,7 +162,8 @@ while (length ($str1) > 6){
 	  $code = $rest;
 	  printf " no: of=%d of1=%d l=%d l1=%d code=%s\n", $of, $of1, $l, $l1, $code;  
 	}
-	exit();
+        $o2obj{$oo} = "-$objOf";
+	#exit();
       }
       # printf "do=%b add=%b %d\n", $do, $add, $do;
       #my ($do, $of, $of1, $l, $l1, $l2, $rest) = unpack "C C C C C C a*", $code;
