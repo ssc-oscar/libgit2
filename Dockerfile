@@ -18,7 +18,7 @@ RUN apt-get update && \
     sssd \
     sssd-tools \
     vim pkg-config  libssh2-1 libssh2-1-dev \
-    git \
+    git iputils-ping rsync net-tools bc \
     curl lsb-release \
     vim-runtime tmux  zsh zip build-essential \
     cmake build-essential	 
