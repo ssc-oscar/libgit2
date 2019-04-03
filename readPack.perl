@@ -14,15 +14,19 @@ my $s = $stat[7];
 my $c =""; 
 my $rl=read (A, $c, $s); 
 my $strB = substr($c, 0, $s-20); 
+my $offset = 20;
 my $strE = substr($c, $s-20, $s); 
 my $sha = unpack "H*", $strE; 
 my ($m, $v, $no, $str1) = unpack "a4 N N a*", $strB; 
+$offset += 4+4;
 my $left = length ($str1); 
 print "rl=$rl s=$s $m version=$v nObj=$no $sha left=$left\n";
 
 
 while (length ($str1) > 6){
+  print "offset = $offset\n";
   my ($t0, $str0) = unpack "C a*", $str1;
+  $offset += 1;
   $str1 = $str0;
   print "left = ".(length($str1))."\n";
   my $h = $t0 & 128;
@@ -35,6 +39,7 @@ while (length ($str1) > 6){
     $h = $sz0 & 128;
     $left -= 1;
     $str1 = substr ($str1, 1, length($str1)-1);
+    $offset += 1;
     $sz0 = ($sz0 & 127);
     push @a, $sz0;
   }
@@ -49,9 +54,12 @@ while (length ($str1) > 6){
   if ($t0 < 5){
     my ($inf, $status) = new Compress::Raw::Zlib::Inflate( -Bufsize => 300 );
     my $code;
-    print "compressed length Max=".(length($str1))." -- ";
+    my $pre = length($str1);
+    print "compressed length Max=$pre -- ";
     $status = $inf->inflate($str1, $code);
-    print "length Left=".(length($str1))." status=$status -- uncompressed length = ".(length($code))."\n";
+    my $left = length($str1);
+    $offset += $pre-$left;
+    print "length Left=$left status=$status -- uncompressed length = ".(length($code))."\n";
     print "$code\n";
   }else{
     if ($t0 == 7){
@@ -60,31 +68,57 @@ while (length ($str1) > 6){
       $sha = unpack "H*", $hh;
       print "base sha=$sha\n";
       $str1 = substr($str1, 20, length($str1)-20);
+      $offset += 20;
       my ($inf, $status) = new Compress::Raw::Zlib::Inflate( -Bufsize => 300 );
       my $code;
+      my $pre = length($str1);
       $status = $inf->inflate($str1, $code);
-      print "length Left=".(length($str1))." status=$status -- uncompressed length = ".(length($code))."\n";
-      my ($do, $rest) = unpack "C a*", $code;
-      my $add = ($do & 0b10000000) == 0;
+      print "length Left=$pre status=$status -- uncompressed length = ".(length($code))."\n";
+      my $left = length($str1);
+      $offset += $pre-$left;
+      my ($sizO, $sizN, $do, $rest) = unpack "C C C a*", $code;
+      my $nadd = ($do & 0b10000000);
+      print "add=$nadd\n";
       $code = $rest;
-      if ($add){
-        #take original object (length in $do) and append $rest
-	#print "left2 = ".(length($str1))."\n";
-	
-	my ($of, $of1, $l, $l1, $rest) = unpack "C C C C a*", $code;
-	$code = $rest;
-        printf "do=%.8b do=%d of=%d of1=%d l=%d l1=%d code=%s\n", $do, $do, $of, $of1, $l, $l1, $code;
+      while (length($code)>0) {
+        printf "do=%.8b sizO=%d sizN=%d\n", $do, $sizO, $sizN;
+        $do = ($do & 0b01111111);
+        if ($nadd){
+          my $cnt = 0;
+          for my $i (0..7){
+	    if ($do & 0b1){
+	      my ($of, $rest) = unpack "C a*", $code;
+	      $code = $rest;
+	      printf "i=%d of=%d ", $i, $of;
+            }
+	    $cnt += $do & 0b1;
+	    $do = $do >> 1;
+          } 
+          print "cnt=$cnt left=".(length($code))."\n";
+        }else{	
+	  my $copy = substr($code, 0, $do);
+	  $code = substr($code, $do, length($code)-$do);
+	  print "len=$do copy=$copy\n";
+	}
+        if (length($code)>0){ 
+          ($do, $rest) = unpack "C a*", $code;
+          $nadd = ($do & 0b10000000);	  
+          $code = $rest;
+	  print "add=$nadd\n";
+	}
       }
     }else{
       if ($t0 == 6){
         print "left1 = ".(length($str1))."\n";
         my $sz0 = unpack "C a*", $str1;
+        $offset += 1;
 	$h = $sz0 & 128;
 	my @a = ($sz0 & 127);
 	while ($h){
 	  $sz0 = unpack "C a*", $str1;
 	  $h = $sz0 & 128;
 	  $str1 = substr ($str1, 1, length($str1)-1);
+          $offset += 1;
 	  $sz0 = ($sz0 & 127);
 	  push @a, $sz0;
 	}
@@ -97,7 +131,10 @@ while (length ($str1) > 6){
 	print "@a\n";
 	my ($inf, $status) = new Compress::Raw::Zlib::Inflate( -Bufsize => 300 );
 	my $code;
+        my $pre = length($str1);
 	$status = $inf->inflate($str1, $code);
+        my $left = length($str1);
+	$offset += $pre - $left;
 	print "look backwards=".($len1)." length Left=".(length($str1))." status=$status -- uncompressed length = ".(length($code))."\n";
 	#exit();
 	my ($do, $rest) = unpack "C a*", $code;
@@ -107,12 +144,13 @@ while (length ($str1) > 6){
 	if ($add){
 	  my ($of, $of1, $l, $l1, $rest) = unpack "C C C C a*", $code;
 	  $code = $rest;
-	  printf "do=%d of=%d of1=%d l=%d l1=%d code=%s\n", $do, $of, $of1, $l, $l1, $code;
+	  printf "add: of=%d of1=%d l=%d l1=%d code=%s\n", $of, $of1, $l, $l1, $code;
 	}else{
-          my ($of, $of1, $l, $rest) = unpack "C C C a*", $code;	
+          my ($of, $of1, $l, $l1, $rest) = unpack "C C C C a*", $code;	
 	  $code = $rest;
-	  printf "of=%d of1=%d l=%d code=%s\n", $of, $of1, $l, $code;  
+	  printf " no: of=%d of1=%d l=%d l1=%d code=%s\n", $of, $of1, $l, $l1, $code;  
 	}
+	exit();
       }
       # printf "do=%b add=%b %d\n", $do, $add, $do;
       #my ($do, $of, $of1, $l, $l1, $l2, $rest) = unpack "C C C C C C a*", $code;
