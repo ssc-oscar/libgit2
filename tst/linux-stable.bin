@@ -1,0 +1,89 @@
+tree 7eecaf7e01e921db23027143851694dec6cdd748
+parent 0be952c13be80ccdd3cb0d1ba25099de9468ac1b
+parent a9b1b455c519ee2fd6a4f9c069511e67b5be1ac4
+author Linus Torvalds <torvalds@linux-foundation.org> 1426352541 -0700
+committer Linus Torvalds <torvalds@linux-foundation.org> 1426352541 -0700
+mergetag object a9b1b455c519ee2fd6a4f9c069511e67b5be1ac4
+ type commit
+ tag locks-v4.0-4
+ tagger Jeff Layton <jeff.layton@primarydata.com> 1426351769 -0400
+ 
+ File locking related fix for v4.0 (#4)
+ -----BEGIN PGP SIGNATURE-----
+ Version: GnuPG v1
+ 
+ iQIcBAABAgAGBQJVBGaxAAoJEAAOaEEZVoIV9XgP/38ZN45ghfnkOCkJbWanlwQj
+ E/zGcuVAuENwWFOjW1aWoOoZ010cy79cnygcr2pR6Rp0FXayLZYmfOaes0hDJt5M
+ YiWE86B4vDsqhWqAehmvW4x/N0Q+LIMr1w3YwpZv8i/gr18vvvDaA4D60as7fdA5
+ j0jI6KH7Dxk8xOduU5t9aSepZei+EgjIA7h/K/f7SNd3dVaSsIt5IGLPAzG0XVZl
+ gsq2/R8LF9mEZgaUa8NZVzHlrwMk2hPn/JVT52nkuk/YXDYIkkLgtvYgI3RTq8Ob
+ D2EI5RFhL+Qj4xTaZRcS2w+sElg4+VP0n5woSlqFGCIEa1xBOkGkXT5uT/XbDQF9
+ z8m+ycscclMrr3xlzBlH+0UhyUqFGwj7wPPhkcqRJRUbL7+moI1k/14gOne/fkAU
+ 4hBEVu7RTADa0YcqeCiEq3EG/KGY8BIB/sf9XGOOfFd8gbro7zFfQEGaxCjjbNwA
+ thwbBJueKO5Mps1oUkN7QUMXl+ElL3N7u4McdAthrOeRWt6+UQVhJpmCeukCPdSN
+ EU2Ju8ZEFSuza5OiMjz8wuGPoHWadddiAnMtqxOHJUMoaL+ZuWExTvH0JzFg83Jv
+ pNmaO0UC8JwFYpeJldkBlo9qJ/iqlmy2Rby4oiuCTJFbdOFdtW0hr9ZsvOuofGyt
+ R8TgLrd+smcja1+bks6o
+ =Qx9q
+ -----END PGP SIGNATURE-----
+
+Merge tag 'locks-v4.0-4' of git://git.samba.org/jlayton/linux
+
+Pull file locking bugfix from Jeff Layton:
+ "Just a small fix for a potential problem in one of the lease
+  tracepoints"
+
+* tag 'locks-v4.0-4' of git://git.samba.org/jlayton/linux:
+  locks: fix generic_delete_lease tracepoint to use victim pointer
+tree 704ffec9216a886f849d09e50f96b273b56006aa
+parent f087000a12ced3ee1c320b71cd38de75c56a7e7a
+author Sasha Levin <alexander.levin@verizon.com> 1484765480 -0500
+committer Sasha Levin <alexander.levin@verizon.com> 1484765480 -0500
+
+Linux 3.18.47
+
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree 704ffec9216a886f849d09e50f96b273b56006aa
+parent f087000a12ced3ee1c320b71cd38de75c56a7e7a
+author Sasha Levin <alexander.levin@verizon.com> 1484765480 -0500
+committer Sasha Levin <alexander.levin@verizon.com> 1484765480 -0500
+
+Linux 3.18.47
+
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree 0db649f5657f2c4cd5580e1c50c42a6cfc130007
+parent 2f952d47911f36766122918cc4e6ae782780f513
+author Sasha Levin <alexander.levin@verizon.com> 1513092104 -0500
+committer Sasha Levin <alexander.levin@verizon.com> 1513092104 -0500
+
+Linux 4.1.48
+
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree d1e75ba7235b5978ab3f4a60584dc71d7f1ec4e6
+parent feedfe2129e348e075b72a5e3e1c7c52d0c769e4
+author Long Li <longli@microsoft.com> 1515615689 -0700
+committer Sasha Levin <alexander.levin@microsoft.com> 1516546740 -0500
+
+storvsc: do not assume SG list is continuous when doing bounce buffers
+
+The original patch was made for stable 4.1 and was Acked on 08/22/2017, but for
+some reason it never made it to the stable tree.
+
+Change from v1:
+Changed comment that this patch is for linux-stable 4.1 and all prior stable
+kernels.
+
+storvsc checks the SG list for gaps before passing them to Hyper-v device.
+If there are gaps, data is copied to a bounce buffer and a continuous data
+buffer is passed to Hyper-V.
+
+The check on gaps assumes SG list is continuous, and not chained. This is
+ not always true. Failing the check may result in incorrect I/O data
+passed to the Hyper-v device.
+
+This code path is not used post Linux 4.1.
+
+[LL: Backport for 4.1]
+Signed-off-by: Long Li <longli@microsoft.com>
+Acked-by: Martin K. Petersen <martin.petersen@oracle.com>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
