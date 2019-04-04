@@ -57,7 +57,7 @@ RUN cd /src && tar xzf Compress-LZF-3.41.tar.gz && tar xzf tokyocabinet-perl-1.3
 
 
 ENV NB_USER audris
-ENV NB_UID 50954
+ENV NB_UID 22923
 ENV HOME /home/$NB_USER
 RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && mkdir $HOME/.ssh && chown -R $NB_USER:users $HOME 
 COPY id_rsa_gcloud.pub $HOME/.ssh/authorized_keys
