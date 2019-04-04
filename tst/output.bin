@@ -1,93 +1,17 @@
-tree e4d9bf44090ae08a91bc358ce7fb5e62ebd9b918
-parent 51091d26b90f53a034c545d39895bc758cffec2d
-author André Offringa <offringa@gmail.com> 1478256931 +0100
-committer André Offringa <offringa@gmail.com> 1478256931 +0100
+tree 7ca25978c07777cbc7d2067379bfe4831d399c0c
+parent 79c8110bfd263f1457183336ec52a2533133890d
+author Audris Mockus <audris@utk.edu> 1549746908 -0500
+committer GitHub <noreply@github.com> 1549746908 -0500
+gpgsig -----BEGIN PGP SIGNATURE-----
+ 
+ wsBcBAABCAAQBQJcX0LcCRBK7hj4Ov3rIwAAdHIIAEPzIJIS+tyzpfOObum/Onzv
+ ClWvQH4I11ZHvDIJmZ6qLA4iqBLQDam3rntmDwHZR+J8NbDZ8W0qQrUQZkb+3ukm
+ e9NtcFBj50aJGQpToTh5GqD+WYPQ4RLgqXqUfOgns2rTLebBEf4mIQTgsaNrrZNN
+ hxXGOdn/GGmPSbc1uFIuy+pMNV/SSnNoFMXxQRU7jHqzfaZA4ajwDt8yAIHdfvl/
+ 0o8Xk5b0IInzck18K8wU77ahksIDJR4eVjDe9h3tWwB/kks19cQn36nOPTurfIgO
+ ErfPzOmwBmjkZ7d59fzksnmNHLPPVKZ7BdMZJk+ljRl7MUPOj5MOoQAK+DUp8UU=
+ =kQns
+ -----END PGP SIGNATURE-----
+ 
 
-Updated pack script
-tree 623333f2b55bd82f3c9688435c0804f95f77e8ba
-parent 1084b46f58e22ab3a51d58aca69400329feb47c0
-author André Offringa <offringa@gmail.com> 1449928012 +0100
-committer André Offringa <offringa@gmail.com> 1449928012 +0100
-
-Merging from lofartools for 1.10 release
-tree 316bdaafe8d538149b3062ea8db59fc5fa71a308
-parent 305698c4d2a1be9b29cb3a0168e5de86f5318110
-author André Offringa <offringa@gmail.com> 1495973484 +0200
-committer André Offringa <offringa@gmail.com> 1495973484 +0200
-
-Merging from lofartools for 2.4 release
-tree 174606f1f1447fa0f1d75a0a688d6444ee08e21d
-parent dde2bf6894af4e17c5249b1953d712c3cb4f4b16
-author André Offringa <offringa@gmail.com> 1432211624 +0200
-committer André Offringa <offringa@gmail.com> 1432211624 +0200
-
-Removing redundant files, adding missing files and cleaning up scripts
-tree 1aefc353630f9e1c1f23d1ac2e9ade26f686891f
-parent c8041bb7acca8f789c61052c7d01a0fb5ca50c47
-author André Offringa <offringa@gmail.com> 1440171960 +0200
-committer André Offringa <offringa@gmail.com> 1440171960 +0200
-
-Final small changes for release 1.9
-tree cd0e841395c24fc2dac92834caef8aa77a566b82
-parent 46f2b033cddb9b426de2a60e095e338575c6b832
-author André Offringa <offringa@gmail.com> 1488367275 +0100
-committer André Offringa <offringa@gmail.com> 1488367275 +0100
-
-Add checks to build in pack script
-tree af5ab3a203c1937da142d19b00ca54b2e6b33dbb
-parent 2491b06f1689ad92915aecd9464b357fe6f68b14
-author André Offringa <offringa@gmail.com> 1485008292 +0100
-committer André Offringa <offringa@gmail.com> 1485008292 +0100
-
-Some platforms report an error in parsing ints on the cmdline -- hopefully now fixed
-tree be0ab0bd2ff05b72a9b8f7e004cf8a1d14f739a8
-parent c000c3268bfb7b22ad1a6f3e19d1ca4f52a8b14e
-author André Offringa <offringa@gmail.com> 1468066576 +0200
-committer André Offringa <offringa@gmail.com> 1468066576 +0200
-
-Updating version to 1.12
-tree d7060345f52f361d40d144338e486309132cdecd
-parent 0f17308591fd58a22501919b76bc4467914ce7fe
-author André Offringa <offringa@gmail.com> 1528979702 +0200
-committer André Offringa <offringa@gmail.com> 1528979702 +0200
-
-Merging change of shift of half a pixel in Idgmsgridder instead of lofarbeamterm, as well as some other small cosmetic changes.
-tree 0c3a272ac6bec518dbafa2ddb4e778287b45ae00
-parent 879b6d2acea70f914489b956f243b12ee51454a6
-author André Offringa <offringa@gmail.com> 1457713547 +0100
-committer André Offringa <offringa@gmail.com> 1457713547 +0100
-
-Merging bugfix midtime of LOFAR beam in snapshot imaging
-tree 52fa19b4be6570b9c3ba33d73c49df609e2ea025
-parent 594d404a492f6edf4faf5086ef5bb203cae470a0
-author André Offringa <offringa@gmail.com> 1482162658 +0100
-committer André Offringa <offringa@gmail.com> 1482162658 +0100
-
-Updating version to today
-tree f99dea2bdd6ed674b02a786f9577ebc5c5191653
-parent af6e03d42ee29cface9421050f633bf87506a974
-author André Offringa <offringa@gmail.com> 1545471131 +0100
-committer André Offringa <offringa@gmail.com> 1545471131 +0100
-
-Merge from lofartools
-tree 2621d0407b6a3d7c6157a6622a2170a38421b9d9
-parent 3229f56aa8544d94f17c4698a627e7439157accf
-author Sebastiaan van der Tol <tol@astron.nl> 1539327002 +0200
-committer Sebastiaan van der Tol <tol@astron.nl> 1539327002 +0200
-
-Changed the call to StationResponse in lofarbeamterm to use the 'frequency'
-argument of calculateBeam(...) as beamformer frequency, instead of the center
-frequency of the measurement set. Effectively the center frequency of the
-output channel image is now used as the beamformer frequency.
-tree b81c9da90f6aa5bfe363ac902edb3865b613cff0
-parent 802f0f4ed5e7b58860b25eb44cd2a2660cc1cb2d
-author André Offringa <offringa@gmail.com> 1512129578 +0100
-committer André Offringa <offringa@gmail.com> 1512129578 +0100
-
-Only use fmadd when __FMA4__ is defined
-tree 1a446f4233137b6c77c3a6deb7f0fe0d2ae07b26
-parent e9590810fa2726b244d8851c477da553ebf68d0a
-author André Offringa <offringa@gmail.com> 1528816592 +0200
-committer André Offringa <offringa@gmail.com> 1528816600 +0200
-
-Set to version (2.6) of yesterday's release
+Update run.sh
