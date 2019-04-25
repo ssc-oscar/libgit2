@@ -1,0 +1,2489 @@
+tree aca070ed8a759fe2d241e188964c7a43190466dd
+parent cc59bae2c6b2ab2bc277fbcf09944f03c8d5a8ed
+author Tadeusz Struk <tadeusz.struk@intel.com> 1553711558 -0700
+committer Sasha Levin <sashal@kernel.org> 1556069556 -0400
+
+tpm: fix an invalid condition in tpm_common_poll
+
+[ Upstream commit 7110629263469b4664d00b38ef80a656eddf3637 ]
+
+The poll condition should only check response_length,
+because reads should only be issued if there is data to read.
+The response_read flag only prevents double writes.
+The problem was that the write set the response_read to false,
+enqued a tpm job, and returned. Then application called poll
+which checked the response_read flag and returned EPOLLIN.
+Then the application called read, but got nothing.
+After all that the async_work kicked in.
+Added also mutex_lock around the poll check to prevent
+other possible race conditions.
+
+Fixes: 9488585b21bef0df12 ("tpm: add support for partial reads")
+Reported-by: Mantas Mikulėnas <grawity@gmail.com>
+Tested-by: Mantas Mikulėnas <grawity@gmail.com>
+Signed-off-by: Tadeusz Struk <tadeusz.struk@intel.com>
+Reviewed-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
+Signed-off-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
+Signed-off-by: James Morris <james.morris@microsoft.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree ada630e1da499723c827ba0ff1084f93daf9ed9c
+parent b89e3859db0658df57abfb1396ebad8d1f4580bb
+author Steve French <stfrench@microsoft.com> 1552856318 -0500
+committer Sasha Levin <sashal@kernel.org> 1553731709 -0400
+
+fix incorrect error code mapping for OBJECTID_NOT_FOUND
+
+[ Upstream commit 85f9987b236cf46e06ffdb5c225cf1f3c0acb789 ]
+
+It was mapped to EIO which can be confusing when user space
+queries for an object GUID for an object for which the server
+file system doesn't support (or hasn't saved one).
+
+As Amir Goldstein suggested this is similar to ENOATTR
+(equivalently ENODATA in Linux errno definitions) so
+changing NT STATUS code mapping for OBJECTID_NOT_FOUND
+to ENODATA.
+
+Signed-off-by: Steve French <stfrench@microsoft.com>
+CC: Amir Goldstein <amir73il@gmail.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 93d3332f46f415701bb371604b1a30874ae1fa3e
+parent bb75775fccb4f20a810fcb942be91a53238334d5
+author Changbin Du <changbin.du@gmail.com> 1553527007 +0000
+committer Sasha Levin (Microsoft) <sashal@kernel.org> 1555464127 -0400
+
+kconfig/[mn]conf: handle backspace (^H) key
+
+[ Upstream commit 9c38f1f044080392603c497ecca4d7d09876ff99 ]
+
+Backspace is not working on some terminal emulators which do not send the
+key code defined by terminfo. Terminals either send '^H' (8) or '^?' (127).
+But currently only '^?' is handled. Let's also handle '^H' for those
+terminals.
+
+Signed-off-by: Changbin Du <changbin.du@gmail.com>
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+Signed-off-by: Sasha Levin (Microsoft) <sashal@kernel.org>
+tree 62b3df54658186c77eece66e12bfa29d2bdccf5c
+parent 1ee67ad58849762273bd384890919315b73a5f5b
+author Phil Auld <pauld@redhat.com> 1556063466 -0400
+committer Sasha Levin <sashal@kernel.org> 1556069573 -0400
+
+sched/fair: Limit sched_cfs_period_timer() loop to avoid hard lockup
+
+[ Upstream commit 2e8e19226398db8265a8e675fcc0118b9e80c9e8 ]
+
+With extremely short cfs_period_us setting on a parent task group with a large
+number of children the for loop in sched_cfs_period_timer() can run until the
+watchdog fires. There is no guarantee that the call to hrtimer_forward_now()
+will ever return 0.  The large number of children can make
+do_sched_cfs_period_timer() take longer than the period.
+
+ NMI watchdog: Watchdog detected hard LOCKUP on cpu 24
+ RIP: 0010:tg_nop+0x0/0x10
+  <IRQ>
+  walk_tg_tree_from+0x29/0xb0
+  unthrottle_cfs_rq+0xe0/0x1a0
+  distribute_cfs_runtime+0xd3/0xf0
+  sched_cfs_period_timer+0xcb/0x160
+  ? sched_cfs_slack_timer+0xd0/0xd0
+  __hrtimer_run_queues+0xfb/0x270
+  hrtimer_interrupt+0x122/0x270
+  smp_apic_timer_interrupt+0x6a/0x140
+  apic_timer_interrupt+0xf/0x20
+  </IRQ>
+
+To prevent this we add protection to the loop that detects when the loop has run
+too many times and scales the period and quota up, proportionally, so that the timer
+can complete before then next period expires.  This preserves the relative runtime
+quota while preventing the hard lockup.
+
+A warning is issued reporting this state and the new values.
+
+Signed-off-by: Phil Auld <pauld@redhat.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: <stable@vger.kernel.org>
+Cc: Anton Blanchard <anton@ozlabs.org>
+Cc: Ben Segall <bsegall@google.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lkml.kernel.org/r/20190319130005.25492-1-pauld@redhat.com
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree fc8d023ec45ba23ed2e7a262dc3d5ff21ca0291a
+parent 8a73fd7dc2de9ae1793b294e84037ff5462ed5da
+author Gabriel Fernandez <gabriel.fernandez@st.com> 1550380216 -0800
+committer Sasha Levin <sashal@kernel.org> 1551290818 -0500
+
+Input: st-keyscan - fix potential zalloc NULL dereference
+
+[ Upstream commit 2439d37e1bf8a34d437573c086572abe0f3f1b15 ]
+
+This patch fixes the following static checker warning:
+
+drivers/input/keyboard/st-keyscan.c:156 keyscan_probe()
+error: potential zalloc NULL dereference: 'keypad_data->input_dev'
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Gabriel Fernandez <gabriel.fernandez@st.com>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 5530ec710fd6a68cdf8da1e9e542f5ffe379e0d8
+parent 3dc1a14baabbefb51ba58b815250815021b1abec
+author Hans de Goede <hdegoede@redhat.com> 1546877301 +0100
+committer Sasha Levin <sashal@kernel.org> 1553694926 -0400
+
+ACPI / video: Extend chassis-type detection with a "Lunch Box" check
+
+[ Upstream commit d693c008e3ca04db5916ff72e68ce661888a913b ]
+
+Commit 53fa1f6e8a59 ("ACPI / video: Only default only_lcd to true on
+Win8-ready _desktops_") introduced chassis type detection, limiting the
+lcd_only check for the backlight to devices where the chassis-type
+indicates their is no builtin LCD panel.
+
+The purpose of the lcd_only check is to avoid advertising a backlight
+interface on desktops, since skylake and newer machines seem to always
+have a backlight interface even if there is no LCD panel. The limiting
+of this check to desktops only was done to avoid breaking backlight
+support on some laptops which do not have the lcd flag set.
+
+The Fujitsu ESPRIMO Q910 which is a compact (NUC like) desktop machine
+has a chassis type of 0x10 aka "Lunch Box". Without the lcd_only check
+we end up falsely advertising backlight/brightness control on this
+device. This commit extend the dmi_is_desktop check to return true
+for type 0x10 to fix this.
+
+Fixes: 53fa1f6e8a59 ("ACPI / video: Only default only_lcd to true ...")
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 044e5c4328ec9625063f89f084648f34195f4432
+parent 4ef4c3e928f08b6904db7616c3572dcf0b0b3fe8
+author jie@chenjie6@huwei.com <jie@chenjie6@huwei.com> 1533946986 -0700
+committer Sasha Levin <alexander.levin@microsoft.com> 1534601803 -0400
+
+mm/memory.c: check return value of ioremap_prot
+
+[ Upstream commit 24eee1e4c47977bdfb71d6f15f6011e7b6188d04 ]
+
+ioremap_prot() can return NULL which could lead to an oops.
+
+Link: http://lkml.kernel.org/r/1533195441-58594-1-git-send-email-chenjie6@huawei.com
+Signed-off-by: chen jie <chenjie6@huawei.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Cc: Li Zefan <lizefan@huawei.com>
+Cc: chenjie <chenjie6@huawei.com>
+Cc: Yang Shi <shy828301@gmail.com>
+Cc: Alexey Dobriyan <adobriyan@gmail.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree eeab93182cfcbfb2537b7a133f5dfeacc121ef81
+parent 98595dd09e3333c440fcae95bb2e79f472fb7526
+author Darrick J. Wong <darrick.wong@oracle.com> 1553357429 -0400
+committer Sasha Levin <sashal@kernel.org> 1553868187 -0400
+
+ext4: prohibit fstrim in norecovery mode
+
+[ Upstream commit 18915b5873f07e5030e6fb108a050fa7c71c59fb ]
+
+The ext4 fstrim implementation uses the block bitmaps to find free space
+that can be discarded.  If we haven't replayed the journal, the bitmaps
+will be stale and we absolutely *cannot* use stale metadata to zap the
+underlying storage.
+
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Signed-off-by: Theodore Ts'o <tytso@mit.edu>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 595c4f590a522c1cd8f8c602b9bee931d4c5f730
+parent d2899537bf0a5f5503401aa21fb0fbf5a0f95ce2
+author Kangjie Lu <kjlu@umn.edu> 1552111451 -0600
+committer Sasha Levin <sashal@kernel.org> 1555809994 -0400
+
+leds: pca9532: fix a potential NULL pointer dereference
+
+[ Upstream commit 0aab8e4df4702b31314a27ec4b0631dfad0fae0a ]
+
+In case of_match_device cannot find a match, return -EINVAL to avoid
+NULL pointer dereference.
+
+Fixes: fa4191a609f2 ("leds: pca9532: Add device tree support")
+Signed-off-by: Kangjie Lu <kjlu@umn.edu>
+Signed-off-by: Jacek Anaszewski <jacek.anaszewski@gmail.com>
+Signed-off-by: Sasha Levin (Microsoft) <sashal@kernel.org>
+tree afccfd23566a4ef49f883bee726888cd59173c91
+parent 8bbbc2326eab5008ebcac7c7436e89eba779b4b1
+author Haiyang Zhang <haiyangz@microsoft.com> 1506119498 -0700
+committer Sasha Levin <alexander.levin@microsoft.com> 1525966572 -0400
+
+hv_netvsc: Fix the real number of queues of non-vRSS cases
+
+For older hosts without multi-channel (vRSS) support, and some error
+cases, we still need to set the real number of queues to one.
+This patch adds this missing setting.
+
+Fixes: 8195b1396ec8 ("hv_netvsc: fix deadlock on hotplug")
+Signed-off-by: Haiyang Zhang <haiyangz@microsoft.com>
+Reviewed-by: Stephen Hemminger <sthemmin@microsoft.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree c9d188a7054ae2876cc2043cbd1d9a685c272b54
+parent a0e9ccaf3d3a6c65884ffd88f86f0296c843cc79
+author Gabriel Fernandez <gabriel.fernandez@st.com> 1550380216 -0800
+committer Sasha Levin <sashal@kernel.org> 1551291823 -0500
+
+Input: st-keyscan - fix potential zalloc NULL dereference
+
+[ Upstream commit 2439d37e1bf8a34d437573c086572abe0f3f1b15 ]
+
+This patch fixes the following static checker warning:
+
+drivers/input/keyboard/st-keyscan.c:156 keyscan_probe()
+error: potential zalloc NULL dereference: 'keypad_data->input_dev'
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Gabriel Fernandez <gabriel.fernandez@st.com>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree b0a6034cff0bd5b64d7bdb21c7aff6c4cc5727c9
+parent eac3b3747576cc2de12815528e67c3f1eab0d2d6
+author Andrey Ryabinin <aryabinin@virtuozzo.com> 1462974711 +0300
+committer Sasha Levin <alexander.levin@verizon.com> 1471786225 -0400
+
+perf/x86: Fix undefined shift on 32-bit kernels
+
+[ Upstream commit 6d6f2833bfbf296101f9f085e10488aef2601ba5 ]
+
+Jim reported:
+
+	UBSAN: Undefined behaviour in arch/x86/events/intel/core.c:3708:12
+	shift exponent 35 is too large for 32-bit type 'long unsigned int'
+
+The use of 'unsigned long' type obviously is not correct here, make it
+'unsigned long long' instead.
+
+Reported-by: Jim Cromie <jim.cromie@gmail.com>
+Signed-off-by: Andrey Ryabinin <aryabinin@virtuozzo.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: <stable@vger.kernel.org>
+Cc: Alexander Shishkin <alexander.shishkin@linux.intel.com>
+Cc: Arnaldo Carvalho de Melo <acme@redhat.com>
+Cc: H. Peter Anvin <hpa@zytor.com>
+Cc: Imre Palik <imrep@amazon.de>
+Cc: Jiri Olsa <jolsa@redhat.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Stephane Eranian <eranian@google.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Vince Weaver <vincent.weaver@maine.edu>
+Fixes: 2c33645d366d ("perf/x86: Honor the architectural performance monitoring version")
+Link: http://lkml.kernel.org/r/1462974711-10037-1-git-send-email-aryabinin@virtuozzo.com
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree 4c65538be7e6f9cd792f7ecb7edc6a661b13e557
+parent 8eff7fbfc0e90fc5917b10488b2b658604372e9c
+author Eugenia Emantayev <eugenia@mellanox.com> 1484233905 +0200
+committer Sasha Levin <alexander.levin@microsoft.com> 1519768233 -0500
+
+net/mlx5e: Increase Striding RQ minimum size limit to 4 multi-packet WQEs
+
+[ Upstream commit d1c61e6d79ea0d4d53dc18bcd2db30ef2d99cfa7 ]
+
+This is to prevent the case of working with a single MPWQE
+(1 WQE is always reserved as RQ is linked-list).
+When the WQE is fully consumed, HW should still have available buffer
+in order not to drop packets.
+
+Fixes: 461017cb006a ("net/mlx5e: Support RX multi-packet WQE (Striding RQ)")
+Signed-off-by: Eugenia Emantayev <eugenia@mellanox.com>
+Reviewed-by: Tariq Toukan <tariqt@mellanox.com>
+Cc: kernel-team@fb.com
+Signed-off-by: Saeed Mahameed <saeedm@mellanox.com>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree 0db649f5657f2c4cd5580e1c50c42a6cfc130007
+parent 2f952d47911f36766122918cc4e6ae782780f513
+author Sasha Levin <alexander.levin@verizon.com> 1513092104 -0500
+committer Sasha Levin <alexander.levin@verizon.com> 1513092104 -0500
+
+Linux 4.1.48
+
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree eff8f322f35085a892324c9f47b403cfaf324bc0
+parent 5d530d8b9a1842a167e538c6e892c794fc73d00f
+author Phil Auld <pauld@redhat.com> 1556063466 -0400
+committer Sasha Levin <sashal@kernel.org> 1556069626 -0400
+
+sched/fair: Limit sched_cfs_period_timer() loop to avoid hard lockup
+
+[ Upstream commit 2e8e19226398db8265a8e675fcc0118b9e80c9e8 ]
+
+With extremely short cfs_period_us setting on a parent task group with a large
+number of children the for loop in sched_cfs_period_timer() can run until the
+watchdog fires. There is no guarantee that the call to hrtimer_forward_now()
+will ever return 0.  The large number of children can make
+do_sched_cfs_period_timer() take longer than the period.
+
+ NMI watchdog: Watchdog detected hard LOCKUP on cpu 24
+ RIP: 0010:tg_nop+0x0/0x10
+  <IRQ>
+  walk_tg_tree_from+0x29/0xb0
+  unthrottle_cfs_rq+0xe0/0x1a0
+  distribute_cfs_runtime+0xd3/0xf0
+  sched_cfs_period_timer+0xcb/0x160
+  ? sched_cfs_slack_timer+0xd0/0xd0
+  __hrtimer_run_queues+0xfb/0x270
+  hrtimer_interrupt+0x122/0x270
+  smp_apic_timer_interrupt+0x6a/0x140
+  apic_timer_interrupt+0xf/0x20
+  </IRQ>
+
+To prevent this we add protection to the loop that detects when the loop has run
+too many times and scales the period and quota up, proportionally, so that the timer
+can complete before then next period expires.  This preserves the relative runtime
+quota while preventing the hard lockup.
+
+A warning is issued reporting this state and the new values.
+
+Signed-off-by: Phil Auld <pauld@redhat.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: <stable@vger.kernel.org>
+Cc: Anton Blanchard <anton@ozlabs.org>
+Cc: Ben Segall <bsegall@google.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lkml.kernel.org/r/20190319130005.25492-1-pauld@redhat.com
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 227e489f7070de0ef43e020f3b197d397ec61324
+parent 9a2b452e14b39777fe4d8ef96afb3ce4aeb63915
+author Gabriel Fernandez <gabriel.fernandez@st.com> 1550380216 -0800
+committer Sasha Levin <sashal@kernel.org> 1551291812 -0500
+
+Input: st-keyscan - fix potential zalloc NULL dereference
+
+[ Upstream commit 2439d37e1bf8a34d437573c086572abe0f3f1b15 ]
+
+This patch fixes the following static checker warning:
+
+drivers/input/keyboard/st-keyscan.c:156 keyscan_probe()
+error: potential zalloc NULL dereference: 'keypad_data->input_dev'
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Gabriel Fernandez <gabriel.fernandez@st.com>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree d1e75ba7235b5978ab3f4a60584dc71d7f1ec4e6
+parent feedfe2129e348e075b72a5e3e1c7c52d0c769e4
+author Long Li <longli@microsoft.com> 1515615689 -0700
+committer Sasha Levin <alexander.levin@microsoft.com> 1516546740 -0500
+
+storvsc: do not assume SG list is continuous when doing bounce buffers
+
+The original patch was made for stable 4.1 and was Acked on 08/22/2017, but for
+some reason it never made it to the stable tree.
+
+Change from v1:
+Changed comment that this patch is for linux-stable 4.1 and all prior stable
+kernels.
+
+storvsc checks the SG list for gaps before passing them to Hyper-v device.
+If there are gaps, data is copied to a bounce buffer and a continuous data
+buffer is passed to Hyper-V.
+
+The check on gaps assumes SG list is continuous, and not chained. This is
+ not always true. Failing the check may result in incorrect I/O data
+passed to the Hyper-v device.
+
+This code path is not used post Linux 4.1.
+
+[LL: Backport for 4.1]
+Signed-off-by: Long Li <longli@microsoft.com>
+Acked-by: Martin K. Petersen <martin.petersen@oracle.com>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree b6bbd74c02e683cd6b67d1a023f1b15df6f50630
+parent f0cd93deb25e050e6fa09e508a7ee34eac690917
+author Phil Auld <pauld@redhat.com> 1556063466 -0400
+committer Sasha Levin <sashal@kernel.org> 1556069587 -0400
+
+sched/fair: Limit sched_cfs_period_timer() loop to avoid hard lockup
+
+[ Upstream commit 2e8e19226398db8265a8e675fcc0118b9e80c9e8 ]
+
+With extremely short cfs_period_us setting on a parent task group with a large
+number of children the for loop in sched_cfs_period_timer() can run until the
+watchdog fires. There is no guarantee that the call to hrtimer_forward_now()
+will ever return 0.  The large number of children can make
+do_sched_cfs_period_timer() take longer than the period.
+
+ NMI watchdog: Watchdog detected hard LOCKUP on cpu 24
+ RIP: 0010:tg_nop+0x0/0x10
+  <IRQ>
+  walk_tg_tree_from+0x29/0xb0
+  unthrottle_cfs_rq+0xe0/0x1a0
+  distribute_cfs_runtime+0xd3/0xf0
+  sched_cfs_period_timer+0xcb/0x160
+  ? sched_cfs_slack_timer+0xd0/0xd0
+  __hrtimer_run_queues+0xfb/0x270
+  hrtimer_interrupt+0x122/0x270
+  smp_apic_timer_interrupt+0x6a/0x140
+  apic_timer_interrupt+0xf/0x20
+  </IRQ>
+
+To prevent this we add protection to the loop that detects when the loop has run
+too many times and scales the period and quota up, proportionally, so that the timer
+can complete before then next period expires.  This preserves the relative runtime
+quota while preventing the hard lockup.
+
+A warning is issued reporting this state and the new values.
+
+Signed-off-by: Phil Auld <pauld@redhat.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: <stable@vger.kernel.org>
+Cc: Anton Blanchard <anton@ozlabs.org>
+Cc: Ben Segall <bsegall@google.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lkml.kernel.org/r/20190319130005.25492-1-pauld@redhat.com
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 237b694d7a06e34344c25b144c3f8bc4b38c8fb0
+parent 34ab9650b664c82a8f9157f8d85d86e521f00089
+author Vitaly Kuznetsov <vkuznets@redhat.com> 1547745130 +0100
+committer Sasha Levin <sashal@kernel.org> 1551290072 -0500
+
+KVM: selftests: check returned evmcs version range
+
+[ Upstream commit 35b531a1e7fc30ac8c62e5ac1794eb1460da614e ]
+
+Check that KVM_CAP_HYPERV_ENLIGHTENED_VMCS returns correct version range.
+
+Signed-off-by: Vitaly Kuznetsov <vkuznets@redhat.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree b0ad997b6b91b6eb16fd60aba6d71a3803facee7
+parent 082d7bbf5f31bc8b05381bc8f97a4ee94751fe80
+author Pi-Hsun Shih <pihsun@chromium.org> 1552502673 -0700
+committer Sasha Levin <sashal@kernel.org> 1553891622 -0400
+
+include/linux/swap.h: use offsetof() instead of custom __swapoffset macro
+
+[ Upstream commit a4046c06be50a4f01d435aa7fe57514818e6cc82 ]
+
+Use offsetof() to calculate offset of a field to take advantage of
+compiler built-in version when possible, and avoid UBSAN warning when
+compiling with Clang:
+
+  UBSAN: Undefined behaviour in mm/swapfile.c:3010:38
+  member access within null pointer of type 'union swap_header'
+  CPU: 6 PID: 1833 Comm: swapon Tainted: G S                4.19.23 #43
+  Call trace:
+   dump_backtrace+0x0/0x194
+   show_stack+0x20/0x2c
+   __dump_stack+0x20/0x28
+   dump_stack+0x70/0x94
+   ubsan_epilogue+0x14/0x44
+   ubsan_type_mismatch_common+0xf4/0xfc
+   __ubsan_handle_type_mismatch_v1+0x34/0x54
+   __se_sys_swapon+0x654/0x1084
+   __arm64_sys_swapon+0x1c/0x24
+   el0_svc_common+0xa8/0x150
+   el0_svc_compat_handler+0x2c/0x38
+   el0_svc_compat+0x8/0x18
+
+Link: http://lkml.kernel.org/r/20190312081902.223764-1-pihsun@chromium.org
+Signed-off-by: Pi-Hsun Shih <pihsun@chromium.org>
+Acked-by: Michal Hocko <mhocko@suse.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 36a975abc9ddffad8e7e916cd4c41dfbd9815962
+parent 9abe55fd58c1579be2dd84c4667055cbe2bf3d50
+author Mohammed Gamal <mgamal@redhat.com> 1522955360 +0200
+committer Sasha Levin <alexander.levin@microsoft.com> 1525913645 -0400
+
+hv_netvsc: Ensure correct teardown message sequence order
+
+Prior to commit 0cf737808ae7 ("hv_netvsc: netvsc_teardown_gpadl() split")
+the call sequence in netvsc_device_remove() was as follows (as
+implemented in netvsc_destroy_buf()):
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Teardown receive buffer GPADL
+3- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+4- Teardown send buffer GPADL
+5- Close vmbus
+
+This didn't work for WS2016 hosts. Commit 0cf737808ae7
+("hv_netvsc: netvsc_teardown_gpadl() split") rearranged the
+teardown sequence as follows:
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+3- Close vmbus
+4- Teardown receive buffer GPADL
+5- Teardown send buffer GPADL
+
+That worked well for WS2016 hosts, but it prevented guests on older hosts from
+shutting down after changing network settings. Commit 0ef58b0a05c1
+("hv_netvsc: change GPAD teardown order on older versions") ensured the
+following message sequence for older hosts
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+3- Teardown receive buffer GPADL
+4- Teardown send buffer GPADL
+5- Close vmbus
+
+However, with this sequence calling `ip link set eth0 mtu 1000` hangs and the
+process becomes uninterruptible. On futher analysis it turns out that on tearing
+down the receive buffer GPADL the kernel is waiting indefinitely
+in vmbus_teardown_gpadl() for a completion to be signaled.
+
+Here is a snippet of where this occurs:
+int vmbus_teardown_gpadl(struct vmbus_channel *channel, u32 gpadl_handle)
+{
+        struct vmbus_channel_gpadl_teardown *msg;
+        struct vmbus_channel_msginfo *info;
+        unsigned long flags;
+        int ret;
+
+        info = kmalloc(sizeof(*info) +
+                       sizeof(struct vmbus_channel_gpadl_teardown), GFP_KERNEL);
+        if (!info)
+                return -ENOMEM;
+
+        init_completion(&info->waitevent);
+        info->waiting_channel = channel;
+[....]
+        ret = vmbus_post_msg(msg, sizeof(struct vmbus_channel_gpadl_teardown),
+                             true);
+
+        if (ret)
+                goto post_msg_err;
+
+        wait_for_completion(&info->waitevent);
+[....]
+}
+
+The completion is signaled from vmbus_ongpadl_torndown(), which gets called when
+the corresponding message is received from the host, which apparently never happens
+in that case.
+This patch works around the issue by restoring the first mentioned message sequence
+for older hosts
+
+Fixes: 0ef58b0a05c1 ("hv_netvsc: change GPAD teardown order on older versions")
+Signed-off-by: Mohammed Gamal <mgamal@redhat.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree 8cd1c790775176987969967bd1cfde18a9b28cc3
+parent bfe29a5072a5677ff5b871cbc6cf64c9f7f32415
+author Gabriel Fernandez <gabriel.fernandez@st.com> 1550380216 -0800
+committer Sasha Levin <sashal@kernel.org> 1551291787 -0500
+
+Input: st-keyscan - fix potential zalloc NULL dereference
+
+[ Upstream commit 2439d37e1bf8a34d437573c086572abe0f3f1b15 ]
+
+This patch fixes the following static checker warning:
+
+drivers/input/keyboard/st-keyscan.c:156 keyscan_probe()
+error: potential zalloc NULL dereference: 'keypad_data->input_dev'
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Gabriel Fernandez <gabriel.fernandez@st.com>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 738dd8db0f3c667db8a5fa4c2dc0862c1a9768e0
+parent 2cf206b40529561a61073892d8b8b6c07fef9c6b
+author Nathan Chancellor <natechancellor@gmail.com> 1547098868 -0700
+committer Sasha Levin <sashal@kernel.org> 1550940202 -0500
+
+isdn: avm: Fix string plus integer warning from Clang
+
+[ Upstream commit 7afa81c55fca0cad589722cb4bce698b4803b0e1 ]
+
+A recent commit in Clang expanded the -Wstring-plus-int warning, showing
+some odd behavior in this file.
+
+drivers/isdn/hardware/avm/b1.c:426:30: warning: adding 'int' to a string does not append to the string [-Wstring-plus-int]
+                cinfo->version[j] = "\0\0" + 1;
+                                    ~~~~~~~^~~
+drivers/isdn/hardware/avm/b1.c:426:30: note: use array indexing to silence this warning
+                cinfo->version[j] = "\0\0" + 1;
+                                           ^
+                                    &      [  ]
+1 warning generated.
+
+This is equivalent to just "\0". Nick pointed out that it is smarter to
+use "" instead of "\0" because "" is used elsewhere in the kernel and
+can be deduplicated at the linking stage.
+
+Link: https://github.com/ClangBuiltLinux/linux/issues/309
+Suggested-by: Nick Desaulniers <ndesaulniers@google.com>
+Signed-off-by: Nathan Chancellor <natechancellor@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 7eecaf7e01e921db23027143851694dec6cdd748
+parent 0be952c13be80ccdd3cb0d1ba25099de9468ac1b
+parent a9b1b455c519ee2fd6a4f9c069511e67b5be1ac4
+author Linus Torvalds <torvalds@linux-foundation.org> 1426352541 -0700
+committer Linus Torvalds <torvalds@linux-foundation.org> 1426352541 -0700
+mergetag object a9b1b455c519ee2fd6a4f9c069511e67b5be1ac4
+ type commit
+ tag locks-v4.0-4
+ tagger Jeff Layton <jeff.layton@primarydata.com> 1426351769 -0400
+ 
+ File locking related fix for v4.0 (#4)
+ -----BEGIN PGP SIGNATURE-----
+ Version: GnuPG v1
+ 
+ iQIcBAABAgAGBQJVBGaxAAoJEAAOaEEZVoIV9XgP/38ZN45ghfnkOCkJbWanlwQj
+ E/zGcuVAuENwWFOjW1aWoOoZ010cy79cnygcr2pR6Rp0FXayLZYmfOaes0hDJt5M
+ YiWE86B4vDsqhWqAehmvW4x/N0Q+LIMr1w3YwpZv8i/gr18vvvDaA4D60as7fdA5
+ j0jI6KH7Dxk8xOduU5t9aSepZei+EgjIA7h/K/f7SNd3dVaSsIt5IGLPAzG0XVZl
+ gsq2/R8LF9mEZgaUa8NZVzHlrwMk2hPn/JVT52nkuk/YXDYIkkLgtvYgI3RTq8Ob
+ D2EI5RFhL+Qj4xTaZRcS2w+sElg4+VP0n5woSlqFGCIEa1xBOkGkXT5uT/XbDQF9
+ z8m+ycscclMrr3xlzBlH+0UhyUqFGwj7wPPhkcqRJRUbL7+moI1k/14gOne/fkAU
+ 4hBEVu7RTADa0YcqeCiEq3EG/KGY8BIB/sf9XGOOfFd8gbro7zFfQEGaxCjjbNwA
+ thwbBJueKO5Mps1oUkN7QUMXl+ElL3N7u4McdAthrOeRWt6+UQVhJpmCeukCPdSN
+ EU2Ju8ZEFSuza5OiMjz8wuGPoHWadddiAnMtqxOHJUMoaL+ZuWExTvH0JzFg83Jv
+ pNmaO0UC8JwFYpeJldkBlo9qJ/iqlmy2Rby4oiuCTJFbdOFdtW0hr9ZsvOuofGyt
+ R8TgLrd+smcja1+bks6o
+ =Qx9q
+ -----END PGP SIGNATURE-----
+
+Merge tag 'locks-v4.0-4' of git://git.samba.org/jlayton/linux
+
+Pull file locking bugfix from Jeff Layton:
+ "Just a small fix for a potential problem in one of the lease
+  tracepoints"
+
+* tag 'locks-v4.0-4' of git://git.samba.org/jlayton/linux:
+  locks: fix generic_delete_lease tracepoint to use victim pointer
+tree 1825a2410ab4844059560a2db529c9a39d22d7d3
+parent 1bb95b32771216aca6edf5489558e8f0fa5b0f8e
+author Mao Wenan <maowenan@huawei.com> 1550818643 +0800
+committer Sasha Levin <sashal@kernel.org> 1552401369 -0400
+
+net: set static variable an initial value in atl2_probe()
+
+[ Upstream commit 4593403fa516a5a4cffe6883c5062d60932cbfbe ]
+
+cards_found is a static variable, but when it enters atl2_probe(),
+cards_found is set to zero, the value is not consistent with last probe,
+so next behavior is not our expect.
+
+Signed-off-by: Mao Wenan <maowenan@huawei.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree ee910925ecee6347dbe78c39eb47e23c8df42e7a
+parent 14aac3c5982093f9eb2fee19cfc9b5ddafb404aa
+author Pi-Hsun Shih <pihsun@chromium.org> 1552502673 -0700
+committer Sasha Levin <sashal@kernel.org> 1553868280 -0400
+
+include/linux/swap.h: use offsetof() instead of custom __swapoffset macro
+
+[ Upstream commit a4046c06be50a4f01d435aa7fe57514818e6cc82 ]
+
+Use offsetof() to calculate offset of a field to take advantage of
+compiler built-in version when possible, and avoid UBSAN warning when
+compiling with Clang:
+
+  UBSAN: Undefined behaviour in mm/swapfile.c:3010:38
+  member access within null pointer of type 'union swap_header'
+  CPU: 6 PID: 1833 Comm: swapon Tainted: G S                4.19.23 #43
+  Call trace:
+   dump_backtrace+0x0/0x194
+   show_stack+0x20/0x2c
+   __dump_stack+0x20/0x28
+   dump_stack+0x70/0x94
+   ubsan_epilogue+0x14/0x44
+   ubsan_type_mismatch_common+0xf4/0xfc
+   __ubsan_handle_type_mismatch_v1+0x34/0x54
+   __se_sys_swapon+0x654/0x1084
+   __arm64_sys_swapon+0x1c/0x24
+   el0_svc_common+0xa8/0x150
+   el0_svc_compat_handler+0x2c/0x38
+   el0_svc_compat+0x8/0x18
+
+Link: http://lkml.kernel.org/r/20190312081902.223764-1-pihsun@chromium.org
+Signed-off-by: Pi-Hsun Shih <pihsun@chromium.org>
+Acked-by: Michal Hocko <mhocko@suse.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree fe97d9f1716e19d4d38dcc0aa6b51c07e7646cc2
+parent 768490990d14b0ff760d4284db4f4cdcc68e901f
+author jie@chenjie6@huwei.com <jie@chenjie6@huwei.com> 1533946986 -0700
+committer Sasha Levin <alexander.levin@microsoft.com> 1534601841 -0400
+
+mm/memory.c: check return value of ioremap_prot
+
+[ Upstream commit 24eee1e4c47977bdfb71d6f15f6011e7b6188d04 ]
+
+ioremap_prot() can return NULL which could lead to an oops.
+
+Link: http://lkml.kernel.org/r/1533195441-58594-1-git-send-email-chenjie6@huawei.com
+Signed-off-by: chen jie <chenjie6@huawei.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Cc: Li Zefan <lizefan@huawei.com>
+Cc: chenjie <chenjie6@huawei.com>
+Cc: Yang Shi <shy828301@gmail.com>
+Cc: Alexey Dobriyan <adobriyan@gmail.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree 014a227e8034dec8525674e622c6f209bea392cd
+parent 2d3d0003b16c4cd8cc9fd93f1a48183f51c3d516
+author Andrew Lunn <andrew@lunn.ch> 1541893270 +0100
+committer Sasha Levin <sashal@kernel.org> 1542047791 -0500
+
+net: dsa: mv88e6xxx: Fix clearing of stats counters
+
+[ Upstream commit a9049ff9214da68df1179a7d5e36b43479abc9b8 ]
+
+The mv88e6161 would sometime fail to probe with a timeout waiting for
+the switch to complete an operation. This operation is supposed to
+clear the statistics counters. However, due to a read/modify/write,
+without the needed mask, the operation actually carried out was more
+random, with invalid parameters, resulting in the switch not
+responding. We need to preserve the histogram mode bits, so apply a
+mask to keep them.
+
+Reported-by: Chris Healy <Chris.Healy@zii.aero>
+Fixes: 40cff8fca9e3 ("net: dsa: mv88e6xxx: Fix stats histogram mode")
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 03e386df0fdb76ee66514555d005d8c38ec1d662
+parent cc22fd3bad4c670bbecce0eebe2b24b7d269517a
+author jie@chenjie6@huwei.com <jie@chenjie6@huwei.com> 1533946986 -0700
+committer Sasha Levin <alexander.levin@microsoft.com> 1534601904 -0400
+
+mm/memory.c: check return value of ioremap_prot
+
+[ Upstream commit 24eee1e4c47977bdfb71d6f15f6011e7b6188d04 ]
+
+ioremap_prot() can return NULL which could lead to an oops.
+
+Link: http://lkml.kernel.org/r/1533195441-58594-1-git-send-email-chenjie6@huawei.com
+Signed-off-by: chen jie <chenjie6@huawei.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Cc: Li Zefan <lizefan@huawei.com>
+Cc: chenjie <chenjie6@huawei.com>
+Cc: Yang Shi <shy828301@gmail.com>
+Cc: Alexey Dobriyan <adobriyan@gmail.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree 704ffec9216a886f849d09e50f96b273b56006aa
+parent f087000a12ced3ee1c320b71cd38de75c56a7e7a
+author Sasha Levin <alexander.levin@verizon.com> 1484765480 -0500
+committer Sasha Levin <alexander.levin@verizon.com> 1484765480 -0500
+
+Linux 3.18.47
+
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree b7c95d1b5c560c1e9e45e94b75d8c7d0eac4d7a9
+parent 0602b1a1f41849ee30e6bccb22d24f0faf0cbd89
+author Darrick J. Wong <darrick.wong@oracle.com> 1553357429 -0400
+committer Sasha Levin <sashal@kernel.org> 1553808042 -0400
+
+ext4: prohibit fstrim in norecovery mode
+
+[ Upstream commit 18915b5873f07e5030e6fb108a050fa7c71c59fb ]
+
+The ext4 fstrim implementation uses the block bitmaps to find free space
+that can be discarded.  If we haven't replayed the journal, the bitmaps
+will be stale and we absolutely *cannot* use stale metadata to zap the
+underlying storage.
+
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Signed-off-by: Theodore Ts'o <tytso@mit.edu>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree efef98c04864d8493e97329048214e7d97eb6256
+parent 407c808587bdab872ad0089434c81ffd61b4e40b
+author Pi-Hsun Shih <pihsun@chromium.org> 1552502673 -0700
+committer Sasha Levin <sashal@kernel.org> 1553815676 -0400
+
+include/linux/swap.h: use offsetof() instead of custom __swapoffset macro
+
+[ Upstream commit a4046c06be50a4f01d435aa7fe57514818e6cc82 ]
+
+Use offsetof() to calculate offset of a field to take advantage of
+compiler built-in version when possible, and avoid UBSAN warning when
+compiling with Clang:
+
+  UBSAN: Undefined behaviour in mm/swapfile.c:3010:38
+  member access within null pointer of type 'union swap_header'
+  CPU: 6 PID: 1833 Comm: swapon Tainted: G S                4.19.23 #43
+  Call trace:
+   dump_backtrace+0x0/0x194
+   show_stack+0x20/0x2c
+   __dump_stack+0x20/0x28
+   dump_stack+0x70/0x94
+   ubsan_epilogue+0x14/0x44
+   ubsan_type_mismatch_common+0xf4/0xfc
+   __ubsan_handle_type_mismatch_v1+0x34/0x54
+   __se_sys_swapon+0x654/0x1084
+   __arm64_sys_swapon+0x1c/0x24
+   el0_svc_common+0xa8/0x150
+   el0_svc_compat_handler+0x2c/0x38
+   el0_svc_compat+0x8/0x18
+
+Link: http://lkml.kernel.org/r/20190312081902.223764-1-pihsun@chromium.org
+Signed-off-by: Pi-Hsun Shih <pihsun@chromium.org>
+Acked-by: Michal Hocko <mhocko@suse.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 9432bb5798ff18eb1a20f37a7fa3055ffcfb12e4
+parent 5066f92a364fdd4fd902f70f4015afb05ff200cb
+author jie@chenjie6@huwei.com <jie@chenjie6@huwei.com> 1533946986 -0700
+committer Sasha Levin <alexander.levin@microsoft.com> 1535126150 -0400
+
+mm/memory.c: check return value of ioremap_prot
+
+[ Upstream commit 24eee1e4c47977bdfb71d6f15f6011e7b6188d04 ]
+
+ioremap_prot() can return NULL which could lead to an oops.
+
+Link: http://lkml.kernel.org/r/1533195441-58594-1-git-send-email-chenjie6@huawei.com
+Signed-off-by: chen jie <chenjie6@huawei.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Cc: Li Zefan <lizefan@huawei.com>
+Cc: chenjie <chenjie6@huawei.com>
+Cc: Yang Shi <shy828301@gmail.com>
+Cc: Alexey Dobriyan <adobriyan@gmail.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree c4c4e3dae8014d38b8c2cc8700f6fc299e79a972
+parent 61fb6fd223d297de96c8978dcc92684d352473c8
+author Darrick J. Wong <darrick.wong@oracle.com> 1553357429 -0400
+committer Sasha Levin <sashal@kernel.org> 1553807989 -0400
+
+ext4: prohibit fstrim in norecovery mode
+
+[ Upstream commit 18915b5873f07e5030e6fb108a050fa7c71c59fb ]
+
+The ext4 fstrim implementation uses the block bitmaps to find free space
+that can be discarded.  If we haven't replayed the journal, the bitmaps
+will be stale and we absolutely *cannot* use stale metadata to zap the
+underlying storage.
+
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Signed-off-by: Theodore Ts'o <tytso@mit.edu>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 11e9be4b05c1baf91961e08da475270f2af59f83
+parent dc862e8aaff630319498c12685cf816e6ff830dd
+author Rasmus Villemoes <linux@rasmusvillemoes.dk> 1552572374 +0100
+committer Sasha Levin <sashal@kernel.org> 1555809967 -0400
+
+leds: trigger: netdev: use memcpy in device_name_store
+
+[ Upstream commit 909346433064b8d840dc82af26161926b8d37558 ]
+
+If userspace doesn't end the input with a newline (which can easily
+happen if the write happens from a C program that does write(fd,
+iface, strlen(iface))), we may end up including garbage from a
+previous, longer value in the device_name. For example
+
+# cat device_name
+
+# printf 'eth12' > device_name
+# cat device_name
+eth12
+# printf 'eth3' > device_name
+# cat device_name
+eth32
+
+I highly doubt anybody is relying on this behaviour, so switch to
+simply copying the bytes (we've already checked that size is <
+IFNAMSIZ) and unconditionally zero-terminate it; of course, we also
+still have to strip a trailing newline.
+
+This is also preparation for future patches.
+
+Fixes: 06f502f57d0d ("leds: trigger: Introduce a NETDEV trigger")
+Signed-off-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Acked-by: Pavel Machek <pavel@ucw.cz>
+Signed-off-by: Jacek Anaszewski <jacek.anaszewski@gmail.com>
+Signed-off-by: Sasha Levin (Microsoft) <sashal@kernel.org>
+tree 03b8d02466019ecb0d54601262a9366cd1876b21
+parent f615db92784cac33a2ba9ea76967dbdf73ee72ec
+author jie@chenjie6@huwei.com <jie@chenjie6@huwei.com> 1533946986 -0700
+committer Sasha Levin <alexander.levin@microsoft.com> 1534601822 -0400
+
+mm/memory.c: check return value of ioremap_prot
+
+[ Upstream commit 24eee1e4c47977bdfb71d6f15f6011e7b6188d04 ]
+
+ioremap_prot() can return NULL which could lead to an oops.
+
+Link: http://lkml.kernel.org/r/1533195441-58594-1-git-send-email-chenjie6@huawei.com
+Signed-off-by: chen jie <chenjie6@huawei.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Cc: Li Zefan <lizefan@huawei.com>
+Cc: chenjie <chenjie6@huawei.com>
+Cc: Yang Shi <shy828301@gmail.com>
+Cc: Alexey Dobriyan <adobriyan@gmail.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree 0e6d05c826c8f0c3f12659b37108a4b8b35feb5b
+parent 04e54522398956265550faca5a9a04ff30bfc2d5
+author Rasmus Villemoes <linux@rasmusvillemoes.dk> 1552572374 +0100
+committer Sasha Levin <sashal@kernel.org> 1555809900 -0400
+
+leds: trigger: netdev: use memcpy in device_name_store
+
+[ Upstream commit 909346433064b8d840dc82af26161926b8d37558 ]
+
+If userspace doesn't end the input with a newline (which can easily
+happen if the write happens from a C program that does write(fd,
+iface, strlen(iface))), we may end up including garbage from a
+previous, longer value in the device_name. For example
+
+# cat device_name
+
+# printf 'eth12' > device_name
+# cat device_name
+eth12
+# printf 'eth3' > device_name
+# cat device_name
+eth32
+
+I highly doubt anybody is relying on this behaviour, so switch to
+simply copying the bytes (we've already checked that size is <
+IFNAMSIZ) and unconditionally zero-terminate it; of course, we also
+still have to strip a trailing newline.
+
+This is also preparation for future patches.
+
+Fixes: 06f502f57d0d ("leds: trigger: Introduce a NETDEV trigger")
+Signed-off-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Acked-by: Pavel Machek <pavel@ucw.cz>
+Signed-off-by: Jacek Anaszewski <jacek.anaszewski@gmail.com>
+Signed-off-by: Sasha Levin (Microsoft) <sashal@kernel.org>
+tree b522416ab70b89995ac719bff4a021ecf2a4d1a1
+parent f72eccdf8f9203609d088010bf4567b4d53c66fb
+author David Rientjes <rientjes@google.com> 1546462593 -0800
+committer Sasha Levin <sashal@kernel.org> 1550431946 -0500
+
+kvm: sev: Fail KVM_SEV_INIT if already initialized
+
+[ Upstream commit 3f14a89d1132dcae3c8ce6721c6ef51f6e6d9b5f ]
+
+By code inspection, it was found that multiple calls to KVM_SEV_INIT
+could deplete asid bits and overwrite kvm_sev_info's regions_list.
+
+Multiple calls to KVM_SVM_INIT is not likely to occur with QEMU, but this
+should likely be fixed anyway.
+
+This code is serialized by kvm->lock.
+
+Fixes: 1654efcbc431 ("KVM: SVM: Add KVM_SEV_INIT command")
+Reported-by: Cfir Cohen <cfir@google.com>
+Signed-off-by: David Rientjes <rientjes@google.com>
+Signed-off-by: Radim Krčmář <rkrcmar@redhat.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 88ff2bac7ad38feffa4ce1a921ac795c2ff79725
+parent 8924206436d5ac6824b5c341b2570d80282a2dcf
+author Coly Li <colyli@suse.de> 1549687986 +0800
+committer Sasha Levin <sashal@kernel.org> 1553631822 -0400
+
+bcache: fix potential div-zero error of writeback_rate_p_term_inverse
+
+[ Upstream commit 5b5fd3c94eef69dcfaa8648198e54c92e5687d6d ]
+
+Current code already uses d_strtoul_nonzero() to convert input string
+to an unsigned integer, to make sure writeback_rate_p_term_inverse
+won't be zero value. But overflow may happen when converting input
+string to an unsigned integer value by d_strtoul_nonzero(), then
+dc->writeback_rate_p_term_inverse can still be set to 0 even if the
+sysfs file input value is not zero, e.g. 4294967296 (a.k.a UINT_MAX+1).
+
+If dc->writeback_rate_p_term_inverse is set to 0, it might cause a
+dev-zero error in following code from __update_writeback_rate(),
+	int64_t proportional_scaled =
+		div_s64(error, dc->writeback_rate_p_term_inverse);
+
+This patch replaces d_strtoul_nonzero() by sysfs_strtoul_clamp() and
+limit the value range in [1, UINT_MAX]. Then the unsigned integer
+overflow and dev-zero error can be avoided.
+
+Signed-off-by: Coly Li <colyli@suse.de>
+Signed-off-by: Jens Axboe <axboe@kernel.dk>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree e7134aa133519cad32c037223698f2219d5aefc7
+parent 8fa7ddb1d0ff9bd21fcdd0cdc33e830c128904be
+author Arnd Bergmann <arnd@arndb.de> 1553529043 +0100
+committer Sasha Levin <sashal@kernel.org> 1555961664 -0400
+
+ARM: iop: don't use using 64-bit DMA masks
+
+[ Upstream commit 2125801ccce19249708ca3245d48998e70569ab8 ]
+
+clang warns about statically defined DMA masks from the DMA_BIT_MASK
+macro with length 64:
+
+ arch/arm/mach-iop13xx/setup.c:303:35: error: shift count >= width of type [-Werror,-Wshift-count-overflow]
+ static u64 iop13xx_adma_dmamask = DMA_BIT_MASK(64);
+                                  ^~~~~~~~~~~~~~~~
+ include/linux/dma-mapping.h:141:54: note: expanded from macro 'DMA_BIT_MASK'
+ #define DMA_BIT_MASK(n) (((n) == 64) ? ~0ULL : ((1ULL<<(n))-1))
+                                                      ^ ~~~
+
+The ones in iop shouldn't really be 64 bit masks, so changing them
+to what the driver can support avoids the warning.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 9878aa502b5c33a3c92fb305ac792828f5b3a981
+parent dd3070debc95a6cfac69871fd1a0a4ad2958b550
+author Keith Busch <keith.busch@intel.com> 1549902230 -0700
+committer Sasha Levin <sashal@kernel.org> 1552324653 -0400
+
+nvme-pci: add missing unlock for reset error
+
+[ Upstream commit 4726bcf30fad37cc555cd9dcd6c73f2b2668c879 ]
+
+The reset work holds a mutex to prevent races with removal modifying the
+same resources, but was unlocking only on success. Unlock on failure
+too.
+
+Fixes: 5c959d73dba64 ("nvme-pci: fix rapid add remove sequence")
+Signed-off-by: Keith Busch <keith.busch@intel.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 9f216b107a2932b2f3055d62a8ff0a9405136d9b
+parent 88e92ff1a5b608b31b46ed67fe4d212d54b13a48
+author Pi-Hsun Shih <pihsun@chromium.org> 1552502673 -0700
+committer Sasha Levin <sashal@kernel.org> 1553815663 -0400
+
+include/linux/swap.h: use offsetof() instead of custom __swapoffset macro
+
+[ Upstream commit a4046c06be50a4f01d435aa7fe57514818e6cc82 ]
+
+Use offsetof() to calculate offset of a field to take advantage of
+compiler built-in version when possible, and avoid UBSAN warning when
+compiling with Clang:
+
+  UBSAN: Undefined behaviour in mm/swapfile.c:3010:38
+  member access within null pointer of type 'union swap_header'
+  CPU: 6 PID: 1833 Comm: swapon Tainted: G S                4.19.23 #43
+  Call trace:
+   dump_backtrace+0x0/0x194
+   show_stack+0x20/0x2c
+   __dump_stack+0x20/0x28
+   dump_stack+0x70/0x94
+   ubsan_epilogue+0x14/0x44
+   ubsan_type_mismatch_common+0xf4/0xfc
+   __ubsan_handle_type_mismatch_v1+0x34/0x54
+   __se_sys_swapon+0x654/0x1084
+   __arm64_sys_swapon+0x1c/0x24
+   el0_svc_common+0xa8/0x150
+   el0_svc_compat_handler+0x2c/0x38
+   el0_svc_compat+0x8/0x18
+
+Link: http://lkml.kernel.org/r/20190312081902.223764-1-pihsun@chromium.org
+Signed-off-by: Pi-Hsun Shih <pihsun@chromium.org>
+Acked-by: Michal Hocko <mhocko@suse.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 6287734ad4ec8a495a6956ead109d30798c900da
+parent ab4cbac488e63aa335cd79aa008f83335e8a690e
+author Changbin Du <changbin.du@gmail.com> 1553527007 +0000
+committer Sasha Levin (Microsoft) <sashal@kernel.org> 1555463664 -0400
+
+kconfig/[mn]conf: handle backspace (^H) key
+
+[ Upstream commit 9c38f1f044080392603c497ecca4d7d09876ff99 ]
+
+Backspace is not working on some terminal emulators which do not send the
+key code defined by terminfo. Terminals either send '^H' (8) or '^?' (127).
+But currently only '^?' is handled. Let's also handle '^H' for those
+terminals.
+
+Signed-off-by: Changbin Du <changbin.du@gmail.com>
+Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
+Signed-off-by: Sasha Levin (Microsoft) <sashal@kernel.org>
+tree ff3a3a49d509ac5b75221c2e201a92f98cab237f
+parent 0085e4adf97ac0f25835a5925cebca91fa4fb5af
+author Coly Li <colyli@suse.de> 1549687986 +0800
+committer Sasha Levin <sashal@kernel.org> 1553647601 -0400
+
+bcache: fix potential div-zero error of writeback_rate_p_term_inverse
+
+[ Upstream commit 5b5fd3c94eef69dcfaa8648198e54c92e5687d6d ]
+
+Current code already uses d_strtoul_nonzero() to convert input string
+to an unsigned integer, to make sure writeback_rate_p_term_inverse
+won't be zero value. But overflow may happen when converting input
+string to an unsigned integer value by d_strtoul_nonzero(), then
+dc->writeback_rate_p_term_inverse can still be set to 0 even if the
+sysfs file input value is not zero, e.g. 4294967296 (a.k.a UINT_MAX+1).
+
+If dc->writeback_rate_p_term_inverse is set to 0, it might cause a
+dev-zero error in following code from __update_writeback_rate(),
+	int64_t proportional_scaled =
+		div_s64(error, dc->writeback_rate_p_term_inverse);
+
+This patch replaces d_strtoul_nonzero() by sysfs_strtoul_clamp() and
+limit the value range in [1, UINT_MAX]. Then the unsigned integer
+overflow and dev-zero error can be avoided.
+
+Signed-off-by: Coly Li <colyli@suse.de>
+Signed-off-by: Jens Axboe <axboe@kernel.dk>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 59923a5515f73bb4a909834a36cd3b41af1121da
+parent 031900bf24a951c9202d0a0513d2fc8b587c4e0f
+author Thadeu Lima de Souza Cascardo <cascardo@canonical.com> 1550831261 -0300
+committer Sasha Levin <sashal@kernel.org> 1552423299 -0400
+
+selftests: fib_tests: sleep after changing carrier. again.
+
+[ Upstream commit af548a27b158d548d41e56255e6eaca1658cc3be ]
+
+Just like commit e2ba732a1681 ("selftests: fib_tests: sleep after
+changing carrier"), wait one second to allow linkwatch to propagate the
+carrier change to the stack.
+
+There are two sets of carrier tests. The first slept after the carrier
+was set to off, and when the second set ran, it was likely that the
+linkwatch would be able to run again without much delay, reducing the
+likelihood of a race. However, if you run 'fib_tests.sh -t carrier' on a
+loop, you will quickly notice the failures.
+
+Sleeping on the second set of tests make the failures go away.
+
+Cc: David Ahern <dsahern@gmail.com>
+Signed-off-by: Thadeu Lima de Souza Cascardo <cascardo@canonical.com>
+Reviewed-by: David Ahern <dsahern@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 7131fde98b8c23a61ba7c9f99ca84e6487bf2e4a
+parent 477db4e4f274a8f6d74bdc187380b47a29136a4a
+author Phil Auld <pauld@redhat.com> 1556063466 -0400
+committer Sasha Levin <sashal@kernel.org> 1556069599 -0400
+
+sched/fair: Limit sched_cfs_period_timer() loop to avoid hard lockup
+
+[ Upstream commit 2e8e19226398db8265a8e675fcc0118b9e80c9e8 ]
+
+With extremely short cfs_period_us setting on a parent task group with a large
+number of children the for loop in sched_cfs_period_timer() can run until the
+watchdog fires. There is no guarantee that the call to hrtimer_forward_now()
+will ever return 0.  The large number of children can make
+do_sched_cfs_period_timer() take longer than the period.
+
+ NMI watchdog: Watchdog detected hard LOCKUP on cpu 24
+ RIP: 0010:tg_nop+0x0/0x10
+  <IRQ>
+  walk_tg_tree_from+0x29/0xb0
+  unthrottle_cfs_rq+0xe0/0x1a0
+  distribute_cfs_runtime+0xd3/0xf0
+  sched_cfs_period_timer+0xcb/0x160
+  ? sched_cfs_slack_timer+0xd0/0xd0
+  __hrtimer_run_queues+0xfb/0x270
+  hrtimer_interrupt+0x122/0x270
+  smp_apic_timer_interrupt+0x6a/0x140
+  apic_timer_interrupt+0xf/0x20
+  </IRQ>
+
+To prevent this we add protection to the loop that detects when the loop has run
+too many times and scales the period and quota up, proportionally, so that the timer
+can complete before then next period expires.  This preserves the relative runtime
+quota while preventing the hard lockup.
+
+A warning is issued reporting this state and the new values.
+
+Signed-off-by: Phil Auld <pauld@redhat.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: <stable@vger.kernel.org>
+Cc: Anton Blanchard <anton@ozlabs.org>
+Cc: Ben Segall <bsegall@google.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lkml.kernel.org/r/20190319130005.25492-1-pauld@redhat.com
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 7524d1658bcacd8a5fde8588ba39b29200f4afd6
+parent 0d4fe9f12d2d73c357a9fe3f58b083d0152fadb6
+author Al Viro <viro@zeniv.linux.org.uk> 1552013141 -0500
+committer Sasha Levin <sashal@kernel.org> 1555961637 -0400
+
+Fix aio_poll() races
+
+[ Upstream commit af5c72b1fc7a00aa484e90b0c4e0eeb582545634 ]
+
+aio_poll() has to cope with several unpleasant problems:
+	* requests that might stay around indefinitely need to
+be made visible for io_cancel(2); that must not be done to
+a request already completed, though.
+	* in cases when ->poll() has placed us on a waitqueue,
+wakeup might have happened (and request completed) before ->poll()
+returns.
+	* worse, in some early wakeup cases request might end
+up re-added into the queue later - we can't treat "woken up and
+currently not in the queue" as "it's not going to stick around
+indefinitely"
+	* ... moreover, ->poll() might have decided not to
+put it on any queues to start with, and that needs to be distinguished
+from the previous case
+	* ->poll() might have tried to put us on more than one queue.
+Only the first will succeed for aio poll, so we might end up missing
+wakeups.  OTOH, we might very well notice that only after the
+wakeup hits and request gets completed (all before ->poll() gets
+around to the second poll_wait()).  In that case it's too late to
+decide that we have an error.
+
+req->woken was an attempt to deal with that.  Unfortunately, it was
+broken.  What we need to keep track of is not that wakeup has happened -
+the thing might come back after that.  It's that async reference is
+already gone and won't come back, so we can't (and needn't) put the
+request on the list of cancellables.
+
+The easiest case is "request hadn't been put on any waitqueues"; we
+can tell by seeing NULL apt.head, and in that case there won't be
+anything async.  We should either complete the request ourselves
+(if vfs_poll() reports anything of interest) or return an error.
+
+In all other cases we get exclusion with wakeups by grabbing the
+queue lock.
+
+If request is currently on queue and we have something interesting
+from vfs_poll(), we can steal it and complete the request ourselves.
+
+If it's on queue and vfs_poll() has not reported anything interesting,
+we either put it on the cancellable list, or, if we know that it
+hadn't been put on all queues ->poll() wanted it on, we steal it and
+return an error.
+
+If it's _not_ on queue, it's either been already dealt with (in which
+case we do nothing), or there's aio_poll_complete_work() about to be
+executed.  In that case we either put it on the cancellable list,
+or, if we know it hadn't been put on all queues ->poll() wanted it on,
+simulate what cancel would've done.
+
+It's a lot more convoluted than I'd like it to be.  Single-consumer APIs
+suck, and unfortunately aio is not an exception...
+
+Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 1a92c0656fd3296a2cbf00f89e14120aa0600099
+parent a5eb1939e90772e903db9b915ea044196fc4880f
+author Thadeu Lima de Souza Cascardo <cascardo@canonical.com> 1550831261 -0300
+committer Sasha Levin <sashal@kernel.org> 1552423291 -0400
+
+selftests: fib_tests: sleep after changing carrier. again.
+
+[ Upstream commit af548a27b158d548d41e56255e6eaca1658cc3be ]
+
+Just like commit e2ba732a1681 ("selftests: fib_tests: sleep after
+changing carrier"), wait one second to allow linkwatch to propagate the
+carrier change to the stack.
+
+There are two sets of carrier tests. The first slept after the carrier
+was set to off, and when the second set ran, it was likely that the
+linkwatch would be able to run again without much delay, reducing the
+likelihood of a race. However, if you run 'fib_tests.sh -t carrier' on a
+loop, you will quickly notice the failures.
+
+Sleeping on the second set of tests make the failures go away.
+
+Cc: David Ahern <dsahern@gmail.com>
+Signed-off-by: Thadeu Lima de Souza Cascardo <cascardo@canonical.com>
+Reviewed-by: David Ahern <dsahern@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree f63501a7e45fb7554f7e52d1ad29d45a78352c03
+parent da3701917eb64666e370bc6a0210d8cbdcb68f0f
+author Mao Wenan <maowenan@huawei.com> 1550818643 +0800
+committer Sasha Levin <sashal@kernel.org> 1551721257 -0500
+
+net: set static variable an initial value in atl2_probe()
+
+[ Upstream commit 4593403fa516a5a4cffe6883c5062d60932cbfbe ]
+
+cards_found is a static variable, but when it enters atl2_probe(),
+cards_found is set to zero, the value is not consistent with last probe,
+so next behavior is not our expect.
+
+Signed-off-by: Mao Wenan <maowenan@huawei.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree cc570e5654ea8a60672fc802bdf60c06e2d1797e
+parent 174788ee57cd13adf92721cca0d8a69bd9b6a345
+author Daniel Borkmann <daniel@iogearbox.net> 1527909719 +0200
+committer Sasha Levin <alexander.levin@microsoft.com> 1528316771 -0400
+
+bpf: fix uapi hole for 32 bit compat applications
+
+[ Upstream commit 36f9814a494a874d5a0f44843544b4b2539022db ]
+
+In 64 bit, we have a 4 byte hole between ifindex and netns_dev in the
+case of struct bpf_map_info but also struct bpf_prog_info. In net-next
+commit b85fab0e67b ("bpf: Add gpl_compatible flag to struct bpf_prog_info")
+added a bitfield into it to expose some flags related to programs. Thus,
+add an unnamed __u32 bitfield for both so that alignment keeps the same
+in both 32 and 64 bit cases, and can be naturally extended from there
+as in b85fab0e67b.
+
+Before:
+
+  # file test.o
+  test.o: ELF 32-bit LSB relocatable, Intel 80386, version 1 (SYSV), not stripped
+  # pahole test.o
+  struct bpf_map_info {
+	__u32                      type;                 /*     0     4 */
+	__u32                      id;                   /*     4     4 */
+	__u32                      key_size;             /*     8     4 */
+	__u32                      value_size;           /*    12     4 */
+	__u32                      max_entries;          /*    16     4 */
+	__u32                      map_flags;            /*    20     4 */
+	char                       name[16];             /*    24    16 */
+	__u32                      ifindex;              /*    40     4 */
+	__u64                      netns_dev;            /*    44     8 */
+	__u64                      netns_ino;            /*    52     8 */
+
+	/* size: 64, cachelines: 1, members: 10 */
+	/* padding: 4 */
+  };
+
+After (same as on 64 bit):
+
+  # file test.o
+  test.o: ELF 32-bit LSB relocatable, Intel 80386, version 1 (SYSV), not stripped
+  # pahole test.o
+  struct bpf_map_info {
+	__u32                      type;                 /*     0     4 */
+	__u32                      id;                   /*     4     4 */
+	__u32                      key_size;             /*     8     4 */
+	__u32                      value_size;           /*    12     4 */
+	__u32                      max_entries;          /*    16     4 */
+	__u32                      map_flags;            /*    20     4 */
+	char                       name[16];             /*    24    16 */
+	__u32                      ifindex;              /*    40     4 */
+
+	/* XXX 4 bytes hole, try to pack */
+
+	__u64                      netns_dev;            /*    48     8 */
+	__u64                      netns_ino;            /*    56     8 */
+	/* --- cacheline 1 boundary (64 bytes) --- */
+
+	/* size: 64, cachelines: 1, members: 10 */
+	/* sum members: 60, holes: 1, sum holes: 4 */
+  };
+
+Reported-by: Dmitry V. Levin <ldv@altlinux.org>
+Reported-by: Eugene Syromiatnikov <esyr@redhat.com>
+Fixes: 52775b33bb507 ("bpf: offload: report device information about offloaded maps")
+Fixes: 675fc275a3a2d ("bpf: offload: report device information for offloaded programs")
+Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+Acked-by: Alexei Starovoitov <ast@kernel.org>
+Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree fe79786b5f14275f4d5e515a6e3aa3c61414140f
+parent 4245c8d53f0d4d3ad0ae88ada3694a102bf6e3b8
+author Dmitry Vyukov <dvyukov@google.com> 1540591392 -0700
+committer Sasha Levin <sashal@kernel.org> 1542074573 -0500
+
+mm: don't warn about large allocations for slab
+
+[ Upstream commit 61448479a9f2c954cde0cfe778cb6bec5d0a748d ]
+
+Slub does not call kmalloc_slab() for sizes > KMALLOC_MAX_CACHE_SIZE,
+instead it falls back to kmalloc_large().
+
+For slab KMALLOC_MAX_CACHE_SIZE == KMALLOC_MAX_SIZE and it calls
+kmalloc_slab() for all allocations relying on NULL return value for
+over-sized allocations.
+
+This inconsistency leads to unwanted warnings from kmalloc_slab() for
+over-sized allocations for slab.  Returning NULL for failed allocations is
+the expected behavior.
+
+Make slub and slab code consistent by checking size >
+KMALLOC_MAX_CACHE_SIZE in slab before calling kmalloc_slab().
+
+While we are here also fix the check in kmalloc_slab().  We should check
+against KMALLOC_MAX_CACHE_SIZE rather than KMALLOC_MAX_SIZE.  It all kinda
+worked because for slab the constants are the same, and slub always checks
+the size against KMALLOC_MAX_CACHE_SIZE before kmalloc_slab().  But if we
+get there with size > KMALLOC_MAX_CACHE_SIZE anyhow bad things will
+happen.  For example, in case of a newly introduced bug in slub code.
+
+Also move the check in kmalloc_slab() from function entry to the size >
+192 case.  This partially compensates for the additional check in slab
+code and makes slub code a bit faster (at least theoretically).
+
+Also drop __GFP_NOWARN in the warning check.  This warning means a bug in
+slab code itself, user-passed flags have nothing to do with it.
+
+Nothing of this affects slob.
+
+Link: http://lkml.kernel.org/r/20180927171502.226522-1-dvyukov@gmail.com
+Signed-off-by: Dmitry Vyukov <dvyukov@google.com>
+Reported-by: syzbot+87829a10073277282ad1@syzkaller.appspotmail.com
+Reported-by: syzbot+ef4e8fc3a06e9019bb40@syzkaller.appspotmail.com
+Reported-by: syzbot+6e438f4036df52cbb863@syzkaller.appspotmail.com
+Reported-by: syzbot+8574471d8734457d98aa@syzkaller.appspotmail.com
+Reported-by: syzbot+af1504df0807a083dbd9@syzkaller.appspotmail.com
+Acked-by: Christoph Lameter <cl@linux.com>
+Acked-by: Vlastimil Babka <vbabka@suse.cz>
+Cc: Pekka Enberg <penberg@kernel.org>
+Cc: David Rientjes <rientjes@google.com>
+Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree d727ab1f1b48bbd938c6b7f10538662ff80252ef
+parent 7d0dbc92e9b574795fd153a669c868f277fe9588
+author Peter Zijlstra <peterz@infradead.org> 1515608588 +0100
+committer Sasha Levin <alexander.levin@microsoft.com> 1517979582 -0500
+
+perf/x86: Fix perf,x86,cpuhp deadlock
+
+[ Upstream commit efe951d3de9141626a494bcb1efb0650eaef6491 ]
+
+More lockdep gifts, a 5-way lockup race:
+
+	perf_event_create_kernel_counter()
+	  perf_event_alloc()
+	    perf_try_init_event()
+	      x86_pmu_event_init()
+		__x86_pmu_event_init()
+		  x86_reserve_hardware()
+ #0		    mutex_lock(&pmc_reserve_mutex);
+		    reserve_ds_buffer()
+ #1		      get_online_cpus()
+
+	perf_event_release_kernel()
+	  _free_event()
+	    hw_perf_event_destroy()
+	      x86_release_hardware()
+ #0		mutex_lock(&pmc_reserve_mutex)
+		release_ds_buffer()
+ #1		  get_online_cpus()
+
+ #1	do_cpu_up()
+	  perf_event_init_cpu()
+ #2	    mutex_lock(&pmus_lock)
+ #3	    mutex_lock(&ctx->mutex)
+
+	sys_perf_event_open()
+	  mutex_lock_double()
+ #3	    mutex_lock(ctx->mutex)
+ #4	    mutex_lock_nested(ctx->mutex, 1);
+
+	perf_try_init_event()
+ #4	  mutex_lock_nested(ctx->mutex, 1)
+	  x86_pmu_event_init()
+	    intel_pmu_hw_config()
+	      x86_add_exclusive()
+ #0		mutex_lock(&pmc_reserve_mutex)
+
+Fix it by using ordering constructs instead of locking.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: Alexander Shishkin <alexander.shishkin@linux.intel.com>
+Cc: Arnaldo Carvalho de Melo <acme@redhat.com>
+Cc: Jiri Olsa <jolsa@redhat.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Stephane Eranian <eranian@google.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Vince Weaver <vincent.weaver@maine.edu>
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree 6c950c7ce28e9b90169464fe4353e3920b72c79b
+parent e0f79aeda6659a81bd424279061b32238e7893f6
+author Ville Syrjälä <ville.syrjala@linux.intel.com> 1538157839 +0300
+committer Sasha Levin <sashal@kernel.org> 1553647646 -0400
+
+drm/dp/mst: Configure no_stop_bit correctly for remote i2c xfers
+
+[ Upstream commit c978ae9bde582e82a04c63a4071701691dd8b35c ]
+
+We aren't supposed to force a stop+start between every i2c msg
+when performing multi message transfers. This should eg. cause
+the DDC segment address to be reset back to 0 between writing
+the segment address and reading the actual EDID extension block.
+
+To quote the E-DDC spec:
+"... this standard requires that the segment pointer be
+ reset to 00h when a NO ACK or a STOP condition is received."
+
+Since we're going to touch this might as well consult the
+I2C_M_STOP flag to determine whether we want to force the stop
+or not.
+
+Cc: Brian Vincent <brainn@gmail.com>
+References: https://bugs.freedesktop.org/show_bug.cgi?id=108081
+Signed-off-by: Ville Syrjälä <ville.syrjala@linux.intel.com>
+Link: https://patchwork.freedesktop.org/patch/msgid/20180928180403.22499-1-ville.syrjala@linux.intel.com
+Reviewed-by: Dhinakaran Pandiyan <dhinakaran.pandiyan@intel.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree e333d7dea4bf442bacc67654601c0240d33249b8
+parent 5452d633726956c7403b94576d1a9dad1fab3bb5
+author Mao Wenan <maowenan@huawei.com> 1550818643 +0800
+committer Sasha Levin <sashal@kernel.org> 1551721266 -0500
+
+net: set static variable an initial value in atl2_probe()
+
+[ Upstream commit 4593403fa516a5a4cffe6883c5062d60932cbfbe ]
+
+cards_found is a static variable, but when it enters atl2_probe(),
+cards_found is set to zero, the value is not consistent with last probe,
+so next behavior is not our expect.
+
+Signed-off-by: Mao Wenan <maowenan@huawei.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 5bf8266d16ed4e8a16345e0d9adf852e84fcc507
+parent 8c0cefe9d34f724d7bed5aaba8f6365f9aab9828
+author Prarit Bhargava <prarit@redhat.com> 1518047363 -0500
+committer Sasha Levin <alexander.levin@microsoft.com> 1519831743 -0500
+
+x86/xen: Calculate __max_logical_packages on PV domains
+
+[ Upstream commit 63e708f826bb21470155d37b103a75d8a9e25b18 ]
+
+The kernel panics on PV domains because native_smp_cpus_done() is
+only called for HVM domains.
+
+Calculate __max_logical_packages for PV domains.
+
+Fixes: b4c0a7326f5d ("x86/smpboot: Fix __max_logical_packages estimate")
+Signed-off-by: Prarit Bhargava <prarit@redhat.com>
+Tested-and-reported-by: Simon Gaiser <simon@invisiblethingslab.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: x86@kernel.org
+Cc: Boris Ostrovsky <boris.ostrovsky@oracle.com>
+Cc: Juergen Gross <jgross@suse.com>
+Cc: Dou Liyang <douly.fnst@cn.fujitsu.com>
+Cc: Prarit Bhargava <prarit@redhat.com>
+Cc: Kate Stewart <kstewart@linuxfoundation.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Andy Lutomirski <luto@kernel.org>
+Cc: Andi Kleen <ak@linux.intel.com>
+Cc: Vitaly Kuznetsov <vkuznets@redhat.com>
+Cc: xen-devel@lists.xenproject.org
+Reviewed-by: Boris Ostrovsky <boris.ostrovsky@oracle.com>
+Signed-off-by: Juergen Gross <jgross@suse.com>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree c238b2a996b426b1383780d600b2bf6b7c386659
+parent 77f5fa7916c4d67f226ba57d2e461d1cd2966979
+author Ville Syrjälä <ville.syrjala@linux.intel.com> 1538157839 +0300
+committer Sasha Levin <sashal@kernel.org> 1553647635 -0400
+
+drm/dp/mst: Configure no_stop_bit correctly for remote i2c xfers
+
+[ Upstream commit c978ae9bde582e82a04c63a4071701691dd8b35c ]
+
+We aren't supposed to force a stop+start between every i2c msg
+when performing multi message transfers. This should eg. cause
+the DDC segment address to be reset back to 0 between writing
+the segment address and reading the actual EDID extension block.
+
+To quote the E-DDC spec:
+"... this standard requires that the segment pointer be
+ reset to 00h when a NO ACK or a STOP condition is received."
+
+Since we're going to touch this might as well consult the
+I2C_M_STOP flag to determine whether we want to force the stop
+or not.
+
+Cc: Brian Vincent <brainn@gmail.com>
+References: https://bugs.freedesktop.org/show_bug.cgi?id=108081
+Signed-off-by: Ville Syrjälä <ville.syrjala@linux.intel.com>
+Link: https://patchwork.freedesktop.org/patch/msgid/20180928180403.22499-1-ville.syrjala@linux.intel.com
+Reviewed-by: Dhinakaran Pandiyan <dhinakaran.pandiyan@intel.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 11322625c081e1ae29d3924d53b8f3de1eaa878e
+parent a4964047f04661485eca0cbffdee14c312b55ee3
+author Gabriel Fernandez <gabriel.fernandez@st.com> 1550380216 -0800
+committer Sasha Levin <sashal@kernel.org> 1551130910 -0500
+
+Input: st-keyscan - fix potential zalloc NULL dereference
+
+[ Upstream commit 2439d37e1bf8a34d437573c086572abe0f3f1b15 ]
+
+This patch fixes the following static checker warning:
+
+drivers/input/keyboard/st-keyscan.c:156 keyscan_probe()
+error: potential zalloc NULL dereference: 'keypad_data->input_dev'
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Gabriel Fernandez <gabriel.fernandez@st.com>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 609beb5e65d9124c5eb1e5f5f19c918f32303595
+parent f148b95a7240fb0b324be536f4428d4bedeb03d3
+author Dominique Martinet <dominique.martinet@cea.fr> 1535409155 +0900
+committer Sasha Levin <sashal@kernel.org> 1541992202 -0500
+
+9p: clear dangling pointers in p9stat_free
+
+[ Upstream commit 62e3941776fea8678bb8120607039410b1b61a65 ]
+
+p9stat_free is more of a cleanup function than a 'free' function as it
+only frees the content of the struct; there are chances of use-after-free
+if it is improperly used (e.g. p9stat_free called twice as it used to be
+possible to)
+
+Clearing dangling pointers makes the function idempotent and safer to use.
+
+Link: http://lkml.kernel.org/r/1535410108-20650-2-git-send-email-asmadeus@codewreck.org
+Signed-off-by: Dominique Martinet <dominique.martinet@cea.fr>
+Reported-by: syzbot+d4252148d198410b864f@syzkaller.appspotmail.com
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 767837d80ac2e4b88c19a23db57558a7f62f08af
+parent f372cb51a09cd243eb56363fbafcb47f5852f76e
+author Phil Auld <pauld@redhat.com> 1556063466 -0400
+committer Sasha Levin <sashal@kernel.org> 1556069642 -0400
+
+sched/fair: Limit sched_cfs_period_timer() loop to avoid hard lockup
+
+[ Upstream commit 2e8e19226398db8265a8e675fcc0118b9e80c9e8 ]
+
+With extremely short cfs_period_us setting on a parent task group with a large
+number of children the for loop in sched_cfs_period_timer() can run until the
+watchdog fires. There is no guarantee that the call to hrtimer_forward_now()
+will ever return 0.  The large number of children can make
+do_sched_cfs_period_timer() take longer than the period.
+
+ NMI watchdog: Watchdog detected hard LOCKUP on cpu 24
+ RIP: 0010:tg_nop+0x0/0x10
+  <IRQ>
+  walk_tg_tree_from+0x29/0xb0
+  unthrottle_cfs_rq+0xe0/0x1a0
+  distribute_cfs_runtime+0xd3/0xf0
+  sched_cfs_period_timer+0xcb/0x160
+  ? sched_cfs_slack_timer+0xd0/0xd0
+  __hrtimer_run_queues+0xfb/0x270
+  hrtimer_interrupt+0x122/0x270
+  smp_apic_timer_interrupt+0x6a/0x140
+  apic_timer_interrupt+0xf/0x20
+  </IRQ>
+
+To prevent this we add protection to the loop that detects when the loop has run
+too many times and scales the period and quota up, proportionally, so that the timer
+can complete before then next period expires.  This preserves the relative runtime
+quota while preventing the hard lockup.
+
+A warning is issued reporting this state and the new values.
+
+Signed-off-by: Phil Auld <pauld@redhat.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: <stable@vger.kernel.org>
+Cc: Anton Blanchard <anton@ozlabs.org>
+Cc: Ben Segall <bsegall@google.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lkml.kernel.org/r/20190319130005.25492-1-pauld@redhat.com
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 065acf98a54960121c26269c51478f8acc10ef63
+parent d235a4febb76a797f017836e19a952129b50b087
+author Pi-Hsun Shih <pihsun@chromium.org> 1552502673 -0700
+committer Sasha Levin <sashal@kernel.org> 1553901803 -0400
+
+include/linux/swap.h: use offsetof() instead of custom __swapoffset macro
+
+[ Upstream commit a4046c06be50a4f01d435aa7fe57514818e6cc82 ]
+
+Use offsetof() to calculate offset of a field to take advantage of
+compiler built-in version when possible, and avoid UBSAN warning when
+compiling with Clang:
+
+  UBSAN: Undefined behaviour in mm/swapfile.c:3010:38
+  member access within null pointer of type 'union swap_header'
+  CPU: 6 PID: 1833 Comm: swapon Tainted: G S                4.19.23 #43
+  Call trace:
+   dump_backtrace+0x0/0x194
+   show_stack+0x20/0x2c
+   __dump_stack+0x20/0x28
+   dump_stack+0x70/0x94
+   ubsan_epilogue+0x14/0x44
+   ubsan_type_mismatch_common+0xf4/0xfc
+   __ubsan_handle_type_mismatch_v1+0x34/0x54
+   __se_sys_swapon+0x654/0x1084
+   __arm64_sys_swapon+0x1c/0x24
+   el0_svc_common+0xa8/0x150
+   el0_svc_compat_handler+0x2c/0x38
+   el0_svc_compat+0x8/0x18
+
+Link: http://lkml.kernel.org/r/20190312081902.223764-1-pihsun@chromium.org
+Signed-off-by: Pi-Hsun Shih <pihsun@chromium.org>
+Acked-by: Michal Hocko <mhocko@suse.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 391c8f6a26c5aed481d181797bb73166c58db33e
+parent f0d7990d6d5cd2bb23b3fb37a05a5e42a18914c3
+author Michal Hocko <mhocko@suse.com> 1550730046 -0800
+committer Sasha Levin <sashal@kernel.org> 1552317089 -0400
+
+mm, memory_hotplug: fix off-by-one in is_pageblock_removable
+
+[ Upstream commit 891cb2a72d821f930a39d5900cb7a3aa752c1d5b ]
+
+Rong Chen has reported the following boot crash:
+
+    PGD 0 P4D 0
+    Oops: 0000 [#1] PREEMPT SMP PTI
+    CPU: 1 PID: 239 Comm: udevd Not tainted 5.0.0-rc4-00149-gefad4e4 #1
+    Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1 04/01/2014
+    RIP: 0010:page_mapping+0x12/0x80
+    Code: 5d c3 48 89 df e8 0e ad 02 00 85 c0 75 da 89 e8 5b 5d c3 0f 1f 44 00 00 53 48 89 fb 48 8b 43 08 48 8d 50 ff a8 01 48 0f 45 da <48> 8b 53 08 48 8d 42 ff 83 e2 01 48 0f 44 c3 48 83 38 ff 74 2f 48
+    RSP: 0018:ffff88801fa87cd8 EFLAGS: 00010202
+    RAX: ffffffffffffffff RBX: fffffffffffffffe RCX: 000000000000000a
+    RDX: fffffffffffffffe RSI: ffffffff820b9a20 RDI: ffff88801e5c0000
+    RBP: 6db6db6db6db6db7 R08: ffff88801e8bb000 R09: 0000000001b64d13
+    R10: ffff88801fa87cf8 R11: 0000000000000001 R12: ffff88801e640000
+    R13: ffffffff820b9a20 R14: ffff88801f145258 R15: 0000000000000001
+    FS:  00007fb2079817c0(0000) GS:ffff88801dd00000(0000) knlGS:0000000000000000
+    CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+    CR2: 0000000000000006 CR3: 000000001fa82000 CR4: 00000000000006a0
+    Call Trace:
+     __dump_page+0x14/0x2c0
+     is_mem_section_removable+0x24c/0x2c0
+     removable_show+0x87/0xa0
+     dev_attr_show+0x25/0x60
+     sysfs_kf_seq_show+0xba/0x110
+     seq_read+0x196/0x3f0
+     __vfs_read+0x34/0x180
+     vfs_read+0xa0/0x150
+     ksys_read+0x44/0xb0
+     do_syscall_64+0x5e/0x4a0
+     entry_SYSCALL_64_after_hwframe+0x49/0xbe
+
+and bisected it down to commit efad4e475c31 ("mm, memory_hotplug:
+is_mem_section_removable do not pass the end of a zone").
+
+The reason for the crash is that the mapping is garbage for poisoned
+(uninitialized) page.  This shouldn't happen as all pages in the zone's
+boundary should be initialized.
+
+Later debugging revealed that the actual problem is an off-by-one when
+evaluating the end_page.  'start_pfn + nr_pages' resp 'zone_end_pfn'
+refers to a pfn after the range and as such it might belong to a
+differen memory section.
+
+This along with CONFIG_SPARSEMEM then makes the loop condition
+completely bogus because a pointer arithmetic doesn't work for pages
+from two different sections in that memory model.
+
+Fix the issue by reworking is_pageblock_removable to be pfn based and
+only use struct page where necessary.  This makes the code slightly
+easier to follow and we will remove the problematic pointer arithmetic
+completely.
+
+Link: http://lkml.kernel.org/r/20190218181544.14616-1-mhocko@kernel.org
+Fixes: efad4e475c31 ("mm, memory_hotplug: is_mem_section_removable do not pass the end of a zone")
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+Reported-by: <rong.a.chen@intel.com>
+Tested-by: <rong.a.chen@intel.com>
+Acked-by: Mike Rapoport <rppt@linux.ibm.com>
+Reviewed-by: Oscar Salvador <osalvador@suse.de>
+Cc: Matthew Wilcox <willy@infradead.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree da1570530a74c857cf0ba312898549d6767804ca
+parent ac0b5fa01a9975da44c52984df10ae4be4590616
+author Sasha Levin <sashal@kernel.org> 1542659011 -0500
+committer Sasha Levin <sashal@kernel.org> 1542659011 -0500
+
+update config for 4.20-rc3
+
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree e938b692f8ea878f01f2b4c6fd4be76405546c91
+parent abf0072434a36d5a4625986afae42d2e800e9886
+author Peter Zijlstra <peterz@infradead.org> 1534951814 +0200
+committer Sasha Levin <alexander.levin@microsoft.com> 1536437471 -0400
+
+mm/tlb: Remove tlb_remove_table() non-concurrent condition
+
+[ Upstream commit a6f572084fbee8b30f91465f4a085d7a90901c57 ]
+
+Will noted that only checking mm_users is incorrect; we should also
+check mm_count in order to cover CPUs that have a lazy reference to
+this mm (and could do speculative TLB operations).
+
+If removing this turns out to be a performance issue, we can
+re-instate a more complete check, but in tlb_table_flush() eliding the
+call_rcu_sched().
+
+Fixes: 267239116987 ("mm, powerpc: move the RCU page-table freeing into generic code")
+Reported-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Acked-by: Rik van Riel <riel@surriel.com>
+Acked-by: Will Deacon <will.deacon@arm.com>
+Cc: Nicholas Piggin <npiggin@gmail.com>
+Cc: David Miller <davem@davemloft.net>
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: stable@kernel.org
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree 9c857d8620a99e92a4e03710caa4d6bb5de5b630
+parent e0ffc6e72a2759537d30bc6089adacdd04046445
+author Mao Wenan <maowenan@huawei.com> 1550818643 +0800
+committer Sasha Levin <sashal@kernel.org> 1552423310 -0400
+
+net: set static variable an initial value in atl2_probe()
+
+[ Upstream commit 4593403fa516a5a4cffe6883c5062d60932cbfbe ]
+
+cards_found is a static variable, but when it enters atl2_probe(),
+cards_found is set to zero, the value is not consistent with last probe,
+so next behavior is not our expect.
+
+Signed-off-by: Mao Wenan <maowenan@huawei.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 9a256e3020b5fc636435d5967c6f507e09b9a886
+parent 925d45e43f603f4c298636a060ab0e74dd66af6a
+author Pi-Hsun Shih <pihsun@chromium.org> 1552502673 -0700
+committer Sasha Levin <sashal@kernel.org> 1553815689 -0400
+
+include/linux/swap.h: use offsetof() instead of custom __swapoffset macro
+
+[ Upstream commit a4046c06be50a4f01d435aa7fe57514818e6cc82 ]
+
+Use offsetof() to calculate offset of a field to take advantage of
+compiler built-in version when possible, and avoid UBSAN warning when
+compiling with Clang:
+
+  UBSAN: Undefined behaviour in mm/swapfile.c:3010:38
+  member access within null pointer of type 'union swap_header'
+  CPU: 6 PID: 1833 Comm: swapon Tainted: G S                4.19.23 #43
+  Call trace:
+   dump_backtrace+0x0/0x194
+   show_stack+0x20/0x2c
+   __dump_stack+0x20/0x28
+   dump_stack+0x70/0x94
+   ubsan_epilogue+0x14/0x44
+   ubsan_type_mismatch_common+0xf4/0xfc
+   __ubsan_handle_type_mismatch_v1+0x34/0x54
+   __se_sys_swapon+0x654/0x1084
+   __arm64_sys_swapon+0x1c/0x24
+   el0_svc_common+0xa8/0x150
+   el0_svc_compat_handler+0x2c/0x38
+   el0_svc_compat+0x8/0x18
+
+Link: http://lkml.kernel.org/r/20190312081902.223764-1-pihsun@chromium.org
+Signed-off-by: Pi-Hsun Shih <pihsun@chromium.org>
+Acked-by: Michal Hocko <mhocko@suse.com>
+Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree cba0118a6402f3a512d9a0f1472805c388cf549b
+parent 0aa9a43c88c270166442a4cf23ad84070064d043
+author Ard Biesheuvel <ard.biesheuvel@linaro.org> 1548331618 +0100
+committer Sasha Levin <sashal@kernel.org> 1552347154 -0400
+
+drm: disable uncached DMA optimization for ARM and arm64
+
+[ Upstream commit e02f5c1bb2283cfcee68f2f0feddcc06150f13aa ]
+
+The DRM driver stack is designed to work with cache coherent devices
+only, but permits an optimization to be enabled in some cases, where
+for some buffers, both the CPU and the GPU use uncached mappings,
+removing the need for DMA snooping and allocation in the CPU caches.
+
+The use of uncached GPU mappings relies on the correct implementation
+of the PCIe NoSnoop TLP attribute by the platform, otherwise the GPU
+will use cached mappings nonetheless. On x86 platforms, this does not
+seem to matter, as uncached CPU mappings will snoop the caches in any
+case. However, on ARM and arm64, enabling this optimization on a
+platform where NoSnoop is ignored results in loss of coherency, which
+breaks correct operation of the device. Since we have no way of
+detecting whether NoSnoop works or not, just disable this
+optimization entirely for ARM and arm64.
+
+Cc: Christian Koenig <christian.koenig@amd.com>
+Cc: Alex Deucher <alexander.deucher@amd.com>
+Cc: David Zhou <David1.Zhou@amd.com>
+Cc: Huang Rui <ray.huang@amd.com>
+Cc: Junwei Zhang <Jerry.Zhang@amd.com>
+Cc: Michel Daenzer <michel.daenzer@amd.com>
+Cc: David Airlie <airlied@linux.ie>
+Cc: Daniel Vetter <daniel@ffwll.ch>
+Cc: Maarten Lankhorst <maarten.lankhorst@linux.intel.com>
+Cc: Maxime Ripard <maxime.ripard@bootlin.com>
+Cc: Sean Paul <sean@poorly.run>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Will Deacon <will.deacon@arm.com>
+Cc: Christoph Hellwig <hch@infradead.org>
+Cc: Robin Murphy <robin.murphy@arm.com>
+Cc: amd-gfx list <amd-gfx@lists.freedesktop.org>
+Cc: dri-devel <dri-devel@lists.freedesktop.org>
+Reported-by: Carsten Haitzler <Carsten.Haitzler@arm.com>
+Signed-off-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Reviewed-by: Christian König <christian.koenig@amd.com>
+Reviewed-by: Alex Deucher <alexander.deucher@amd.com>
+Link: https://patchwork.kernel.org/patch/10778815/
+Signed-off-by: Christian König <christian.koenig@amd.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree c6f37cfc496a83c972d894ebeee8ba57e52a363a
+parent 79c6c01d8caaad34a595b3f4b7dab0b31c94b60d
+author Darrick J. Wong <darrick.wong@oracle.com> 1553357429 -0400
+committer Sasha Levin <sashal@kernel.org> 1553808020 -0400
+
+ext4: prohibit fstrim in norecovery mode
+
+[ Upstream commit 18915b5873f07e5030e6fb108a050fa7c71c59fb ]
+
+The ext4 fstrim implementation uses the block bitmaps to find free space
+that can be discarded.  If we haven't replayed the journal, the bitmaps
+will be stale and we absolutely *cannot* use stale metadata to zap the
+underlying storage.
+
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Signed-off-by: Theodore Ts'o <tytso@mit.edu>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 3f72f569fa24346f24381a1bcc3e97fc27067a4a
+parent a890623c72cae84fa675cf76a6a2af2a7407cbe9
+author Mohammed Gamal <mgamal@redhat.com> 1522955360 +0200
+committer Sasha Levin <alexander.levin@microsoft.com> 1525911539 -0400
+
+hv_netvsc: Ensure correct teardown message sequence order
+
+Prior to commit 0cf737808ae7 ("hv_netvsc: netvsc_teardown_gpadl() split")
+the call sequence in netvsc_device_remove() was as follows (as
+implemented in netvsc_destroy_buf()):
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Teardown receive buffer GPADL
+3- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+4- Teardown send buffer GPADL
+5- Close vmbus
+
+This didn't work for WS2016 hosts. Commit 0cf737808ae7
+("hv_netvsc: netvsc_teardown_gpadl() split") rearranged the
+teardown sequence as follows:
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+3- Close vmbus
+4- Teardown receive buffer GPADL
+5- Teardown send buffer GPADL
+
+That worked well for WS2016 hosts, but it prevented guests on older hosts from
+shutting down after changing network settings. Commit 0ef58b0a05c1
+("hv_netvsc: change GPAD teardown order on older versions") ensured the
+following message sequence for older hosts
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+3- Teardown receive buffer GPADL
+4- Teardown send buffer GPADL
+5- Close vmbus
+
+However, with this sequence calling `ip link set eth0 mtu 1000` hangs and the
+process becomes uninterruptible. On futher analysis it turns out that on tearing
+down the receive buffer GPADL the kernel is waiting indefinitely
+in vmbus_teardown_gpadl() for a completion to be signaled.
+
+Here is a snippet of where this occurs:
+int vmbus_teardown_gpadl(struct vmbus_channel *channel, u32 gpadl_handle)
+{
+        struct vmbus_channel_gpadl_teardown *msg;
+        struct vmbus_channel_msginfo *info;
+        unsigned long flags;
+        int ret;
+
+        info = kmalloc(sizeof(*info) +
+                       sizeof(struct vmbus_channel_gpadl_teardown), GFP_KERNEL);
+        if (!info)
+                return -ENOMEM;
+
+        init_completion(&info->waitevent);
+        info->waiting_channel = channel;
+[....]
+        ret = vmbus_post_msg(msg, sizeof(struct vmbus_channel_gpadl_teardown),
+                             true);
+
+        if (ret)
+                goto post_msg_err;
+
+        wait_for_completion(&info->waitevent);
+[....]
+}
+
+The completion is signaled from vmbus_ongpadl_torndown(), which gets called when
+the corresponding message is received from the host, which apparently never happens
+in that case.
+This patch works around the issue by restoring the first mentioned message sequence
+for older hosts
+
+Fixes: 0ef58b0a05c1 ("hv_netvsc: change GPAD teardown order on older versions")
+Signed-off-by: Mohammed Gamal <mgamal@redhat.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree 0a22db5bbfbdd2e1cfb119a5e0cfda64d05cdbee
+parent 554782dbd3d39535e505a0e095a4a67de9ee5759
+author Arnd Bergmann <arnd@arndb.de> 1553529043 +0100
+committer Sasha Levin <sashal@kernel.org> 1556040643 -0400
+
+ARM: iop: don't use using 64-bit DMA masks
+
+[ Upstream commit 2125801ccce19249708ca3245d48998e70569ab8 ]
+
+clang warns about statically defined DMA masks from the DMA_BIT_MASK
+macro with length 64:
+
+ arch/arm/mach-iop13xx/setup.c:303:35: error: shift count >= width of type [-Werror,-Wshift-count-overflow]
+ static u64 iop13xx_adma_dmamask = DMA_BIT_MASK(64);
+                                  ^~~~~~~~~~~~~~~~
+ include/linux/dma-mapping.h:141:54: note: expanded from macro 'DMA_BIT_MASK'
+ #define DMA_BIT_MASK(n) (((n) == 64) ? ~0ULL : ((1ULL<<(n))-1))
+                                                      ^ ~~~
+
+The ones in iop shouldn't really be 64 bit masks, so changing them
+to what the driver can support avoids the warning.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 4c9241dc664973ca19a8d151901bedd5cd1aeddc
+parent c668934b4a7c52953ee8301d33cba62b03f71960
+author Michal Hocko <mhocko@suse.com> 1542409733 -0800
+committer Sasha Levin <sashal@kernel.org> 1542640846 -0500
+
+mm, page_alloc: check for max order in hot path
+
+[ Upstream commit c63ae43ba53bc432b414fd73dd5f4b01fcb1ab43 ]
+
+Konstantin has noticed that kvmalloc might trigger the following
+warning:
+
+  WARNING: CPU: 0 PID: 6676 at mm/vmstat.c:986 __fragmentation_index+0x54/0x60
+  [...]
+  Call Trace:
+   fragmentation_index+0x76/0x90
+   compaction_suitable+0x4f/0xf0
+   shrink_node+0x295/0x310
+   node_reclaim+0x205/0x250
+   get_page_from_freelist+0x649/0xad0
+   __alloc_pages_nodemask+0x12a/0x2a0
+   kmalloc_large_node+0x47/0x90
+   __kmalloc_node+0x22b/0x2e0
+   kvmalloc_node+0x3e/0x70
+   xt_alloc_table_info+0x3a/0x80 [x_tables]
+   do_ip6t_set_ctl+0xcd/0x1c0 [ip6_tables]
+   nf_setsockopt+0x44/0x60
+   SyS_setsockopt+0x6f/0xc0
+   do_syscall_64+0x67/0x120
+   entry_SYSCALL_64_after_hwframe+0x3d/0xa2
+
+the problem is that we only check for an out of bound order in the slow
+path and the node reclaim might happen from the fast path already.  This
+is fixable by making sure that kvmalloc doesn't ever use kmalloc for
+requests that are larger than KMALLOC_MAX_SIZE but this also shows that
+the code is rather fragile.  A recent UBSAN report just underlines that
+by the following report
+
+  UBSAN: Undefined behaviour in mm/page_alloc.c:3117:19
+  shift exponent 51 is too large for 32-bit type 'int'
+  CPU: 0 PID: 6520 Comm: syz-executor1 Not tainted 4.19.0-rc2 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+  Call Trace:
+   __dump_stack lib/dump_stack.c:77 [inline]
+   dump_stack+0xd2/0x148 lib/dump_stack.c:113
+   ubsan_epilogue+0x12/0x94 lib/ubsan.c:159
+   __ubsan_handle_shift_out_of_bounds+0x2b6/0x30b lib/ubsan.c:425
+   __zone_watermark_ok+0x2c7/0x400 mm/page_alloc.c:3117
+   zone_watermark_fast mm/page_alloc.c:3216 [inline]
+   get_page_from_freelist+0xc49/0x44c0 mm/page_alloc.c:3300
+   __alloc_pages_nodemask+0x21e/0x640 mm/page_alloc.c:4370
+   alloc_pages_current+0xcc/0x210 mm/mempolicy.c:2093
+   alloc_pages include/linux/gfp.h:509 [inline]
+   __get_free_pages+0x12/0x60 mm/page_alloc.c:4414
+   dma_mem_alloc+0x36/0x50 arch/x86/include/asm/floppy.h:156
+   raw_cmd_copyin drivers/block/floppy.c:3159 [inline]
+   raw_cmd_ioctl drivers/block/floppy.c:3206 [inline]
+   fd_locked_ioctl+0xa00/0x2c10 drivers/block/floppy.c:3544
+   fd_ioctl+0x40/0x60 drivers/block/floppy.c:3571
+   __blkdev_driver_ioctl block/ioctl.c:303 [inline]
+   blkdev_ioctl+0xb3c/0x1a30 block/ioctl.c:601
+   block_ioctl+0x105/0x150 fs/block_dev.c:1883
+   vfs_ioctl fs/ioctl.c:46 [inline]
+   do_vfs_ioctl+0x1c0/0x1150 fs/ioctl.c:687
+   ksys_ioctl+0x9e/0xb0 fs/ioctl.c:702
+   __do_sys_ioctl fs/ioctl.c:709 [inline]
+   __se_sys_ioctl fs/ioctl.c:707 [inline]
+   __x64_sys_ioctl+0x7e/0xc0 fs/ioctl.c:707
+   do_syscall_64+0xc4/0x510 arch/x86/entry/common.c:290
+   entry_SYSCALL_64_after_hwframe+0x49/0xbe
+
+Note that this is not a kvmalloc path.  It is just that the fast path
+really depends on having sanitzed order as well.  Therefore move the
+order check to the fast path.
+
+Link: http://lkml.kernel.org/r/20181113094305.GM15120@dhcp22.suse.cz
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+Reported-by: Konstantin Khlebnikov <khlebnikov@yandex-team.ru>
+Reported-by: Kyungtae Kim <kt0755@gmail.com>
+Acked-by: Vlastimil Babka <vbabka@suse.cz>
+Cc: Balbir Singh <bsingharora@gmail.com>
+Cc: Mel Gorman <mgorman@techsingularity.net>
+Cc: Pavel Tatashin <pavel.tatashin@microsoft.com>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>
+Cc: Aaron Lu <aaron.lu@intel.com>
+Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
+Cc: Byoungyoung Lee <lifeasageek@gmail.com>
+Cc: "Dae R. Jeong" <threeearcat@gmail.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 9fb54ecdb95c0e8d3df938595d24922111df12ab
+parent 6053f65133fe9155ae6a9ec89db91f7b6ac7118d
+author Dmitry Osipenko <digetx@gmail.com> 1531843838 +0300
+committer Sasha Levin <alexander.levin@microsoft.com> 1535516418 -0400
+
+gpio: tegra: Fix tegra_gpio_irq_set_type()
+
+[ Upstream commit f78709a5d4114edc21a5d86586ed5e56e284f2bd ]
+
+Commit 36b312792b97 ("gpiolib: Respect error code of ->get_direction()")
+broke tegra_gpio_irq_set_type() because requesting of GPIO direction must
+be done after enabling GPIO function for a pin.
+
+This patch fixes drivers probe failure like this:
+
+ gpio gpiochip0: (tegra-gpio): gpiochip_lock_as_irq: cannot get GPIO direction
+ tegra-gpio 6000d000.gpio: unable to lock Tegra GPIO 144 as IRQ
+
+Fixes: 36b312792b97 ("gpiolib: Respect error code of ->get_direction()")
+Signed-off-by: Dmitry Osipenko <digetx@gmail.com>
+Acked-by: Jon Hunter <jonathanh@nvidia.com>
+Tested-by: Jon Hunter <jonathanh@nvidia.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree b4689c2b5fd63b32e0622ce7d6ac00ffd32fb360
+parent 85f499b9709a21920dace0f52052fbcf1ab2261d
+author Hans de Goede <hdegoede@redhat.com> 1546877301 +0100
+committer Sasha Levin <sashal@kernel.org> 1553647623 -0400
+
+ACPI / video: Extend chassis-type detection with a "Lunch Box" check
+
+[ Upstream commit d693c008e3ca04db5916ff72e68ce661888a913b ]
+
+Commit 53fa1f6e8a59 ("ACPI / video: Only default only_lcd to true on
+Win8-ready _desktops_") introduced chassis type detection, limiting the
+lcd_only check for the backlight to devices where the chassis-type
+indicates their is no builtin LCD panel.
+
+The purpose of the lcd_only check is to avoid advertising a backlight
+interface on desktops, since skylake and newer machines seem to always
+have a backlight interface even if there is no LCD panel. The limiting
+of this check to desktops only was done to avoid breaking backlight
+support on some laptops which do not have the lcd flag set.
+
+The Fujitsu ESPRIMO Q910 which is a compact (NUC like) desktop machine
+has a chassis type of 0x10 aka "Lunch Box". Without the lcd_only check
+we end up falsely advertising backlight/brightness control on this
+device. This commit extend the dmi_is_desktop check to return true
+for type 0x10 to fix this.
+
+Fixes: 53fa1f6e8a59 ("ACPI / video: Only default only_lcd to true ...")
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree e286f82c594dd3acb4ae53113c6c2d2dd1eb76b2
+parent 481c99e311dc3bf6c971c3a41a886da0b749d165
+author Jim Mattson <jmattson@google.com> 1495565572 -0700
+committer Sasha Levin <alexander.levin@verizon.com> 1501111660 -0400
+
+kvm: vmx: Do not disable intercepts for BNDCFGS
+
+[ Upstream commit a8b6fda38f80e75afa3b125c9e7f2550b579454b ]
+
+The MSR permission bitmaps are shared by all VMs. However, some VMs
+may not be configured to support MPX, even when the host does. If the
+host supports VMX and the guest does not, we should intercept accesses
+to the BNDCFGS MSR, so that we can synthesize a #GP
+fault. Furthermore, if the host does not support MPX and the
+"ignore_msrs" kvm kernel parameter is set, then we should intercept
+accesses to the BNDCFGS MSR, so that we can skip over the rdmsr/wrmsr
+without raising a #GP fault.
+
+Fixes: da8999d31818fdc8 ("KVM: x86: Intel MPX vmx and msr handle")
+Signed-off-by: Jim Mattson <jmattson@google.com>
+Signed-off-by: Radim Krčmář <rkrcmar@redhat.com>
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree e8b277315bb4adca860a578c186acc871aef93fe
+parent 663a4f23caea3db4ef169975bf7660b180e9d21d
+author Kangjie Lu <kjlu@umn.edu> 1552111451 -0600
+committer Sasha Levin <sashal@kernel.org> 1555809977 -0400
+
+leds: pca9532: fix a potential NULL pointer dereference
+
+[ Upstream commit 0aab8e4df4702b31314a27ec4b0631dfad0fae0a ]
+
+In case of_match_device cannot find a match, return -EINVAL to avoid
+NULL pointer dereference.
+
+Fixes: fa4191a609f2 ("leds: pca9532: Add device tree support")
+Signed-off-by: Kangjie Lu <kjlu@umn.edu>
+Signed-off-by: Jacek Anaszewski <jacek.anaszewski@gmail.com>
+Signed-off-by: Sasha Levin (Microsoft) <sashal@kernel.org>
+tree 46cabd3ea33149cf100950c9b613ae730c68f0df
+parent 67e9a4573805eadf32f098b36baf3665aec2048c
+author Al Viro <viro@zeniv.linux.org.uk> 1552345236 -0400
+committer Sasha Levin <sashal@kernel.org> 1555961649 -0400
+
+aio: fold lookup_kiocb() into its sole caller
+
+[ Upstream commit 833f4154ed560232120bc475935ee1d6a20e159f ]
+
+Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 61521ae54f4aa3688f5a7708462e4860dbab2995
+parent a85c2854036924e4c1a32c7f9d3fb8c4b76b8bab
+author Tyrel Datwyler <tyreld@linux.vnet.ibm.com> 1471040407 -0500
+committer Sasha Levin <alexander.levin@verizon.com> 1474161498 -0400
+
+scsi: fix upper bounds check of sense key in scsi_sense_key_string()
+
+[ Upstream commit a87eeb900dbb9f8202f96604d56e47e67c936b9d ]
+
+Commit 655ee63cf371 ("scsi constants: command, sense key + additional
+sense string") added a "Completed" sense string with key 0xF to
+snstext[], but failed to updated the upper bounds check of the sense key
+in scsi_sense_key_string().
+
+Fixes: 655ee63cf371 ("[SCSI] scsi constants: command, sense key + additional sense strings")
+Cc: <stable@vger.kernel.org> # v3.12+
+Signed-off-by: Tyrel Datwyler <tyreld@linux.vnet.ibm.com>
+Reviewed-by: Bart Van Assche <bart.vanassche@sandisk.com>
+Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree d77e5861a9b7d748afe51cd43bef84ceff0fcc20
+parent 9806e6c69f493ab39bec305fafe513f15108a8df
+author Arnd Bergmann <arnd@arndb.de> 1553529043 +0100
+committer Sasha Levin <sashal@kernel.org> 1555961705 -0400
+
+ARM: iop: don't use using 64-bit DMA masks
+
+[ Upstream commit 2125801ccce19249708ca3245d48998e70569ab8 ]
+
+clang warns about statically defined DMA masks from the DMA_BIT_MASK
+macro with length 64:
+
+ arch/arm/mach-iop13xx/setup.c:303:35: error: shift count >= width of type [-Werror,-Wshift-count-overflow]
+ static u64 iop13xx_adma_dmamask = DMA_BIT_MASK(64);
+                                  ^~~~~~~~~~~~~~~~
+ include/linux/dma-mapping.h:141:54: note: expanded from macro 'DMA_BIT_MASK'
+ #define DMA_BIT_MASK(n) (((n) == 64) ? ~0ULL : ((1ULL<<(n))-1))
+                                                      ^ ~~~
+
+The ones in iop shouldn't really be 64 bit masks, so changing them
+to what the driver can support avoids the warning.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree c3d2126cb53512be2925ca222b585ed44ba82011
+parent 833d8d9665d67525584f7ae9cfd2b486c0ef1aa8
+author Prarit Bhargava <prarit@redhat.com> 1539011178 -0400
+committer Sasha Levin <sashal@kernel.org> 1541344881 -0500
+
+cpupower: Fix AMD Family 0x17 msr_pstate size
+
+[ Upstream commit 8c22e2f695920ebd94f9a53bcf2a65eb36d4dba1 ]
+
+The msr_pstate data is only 63 bits long and should be 64 bits.
+
+Add in the missing bit from res1 for AMD Family 0x17.
+
+Reference: https://www.amd.com/system/files/TechDocs/54945_PPR_Family_17h_Models_00h-0Fh.pdf, page 138.
+
+Signed-off-by: Prarit Bhargava <prarit@redhat.com>
+Cc: Shuah Khan <shuah@kernel.org>
+Cc: Stafford Horne <shorne@gmail.com>
+Signed-off-by: Shuah Khan (Samsung OSG) <shuah@kernel.org>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree e216a47beb68a86255b8a33532d052e8a620e9df
+parent 7eb58c19279ae965770ae68032a1664bdf851ce4
+author Mohammed Gamal <mgamal@redhat.com> 1522955360 +0200
+committer Sasha Levin <alexander.levin@microsoft.com> 1523925093 -0400
+
+hv_netvsc: Ensure correct teardown message sequence order
+
+Prior to commit 0cf737808ae7 ("hv_netvsc: netvsc_teardown_gpadl() split")
+the call sequence in netvsc_device_remove() was as follows (as
+implemented in netvsc_destroy_buf()):
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Teardown receive buffer GPADL
+3- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+4- Teardown send buffer GPADL
+5- Close vmbus
+
+This didn't work for WS2016 hosts. Commit 0cf737808ae7
+("hv_netvsc: netvsc_teardown_gpadl() split") rearranged the
+teardown sequence as follows:
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+3- Close vmbus
+4- Teardown receive buffer GPADL
+5- Teardown send buffer GPADL
+
+That worked well for WS2016 hosts, but it prevented guests on older hosts from
+shutting down after changing network settings. Commit 0ef58b0a05c1
+("hv_netvsc: change GPAD teardown order on older versions") ensured the
+following message sequence for older hosts
+1- Send NVSP_MSG1_TYPE_REVOKE_RECV_BUF message
+2- Send NVSP_MSG1_TYPE_REVOKE_SEND_BUF message
+3- Teardown receive buffer GPADL
+4- Teardown send buffer GPADL
+5- Close vmbus
+
+However, with this sequence calling `ip link set eth0 mtu 1000` hangs and the
+process becomes uninterruptible. On futher analysis it turns out that on tearing
+down the receive buffer GPADL the kernel is waiting indefinitely
+in vmbus_teardown_gpadl() for a completion to be signaled.
+
+Here is a snippet of where this occurs:
+int vmbus_teardown_gpadl(struct vmbus_channel *channel, u32 gpadl_handle)
+{
+        struct vmbus_channel_gpadl_teardown *msg;
+        struct vmbus_channel_msginfo *info;
+        unsigned long flags;
+        int ret;
+
+        info = kmalloc(sizeof(*info) +
+                       sizeof(struct vmbus_channel_gpadl_teardown), GFP_KERNEL);
+        if (!info)
+                return -ENOMEM;
+
+        init_completion(&info->waitevent);
+        info->waiting_channel = channel;
+[....]
+        ret = vmbus_post_msg(msg, sizeof(struct vmbus_channel_gpadl_teardown),
+                             true);
+
+        if (ret)
+                goto post_msg_err;
+
+        wait_for_completion(&info->waitevent);
+[....]
+}
+
+The completion is signaled from vmbus_ongpadl_torndown(), which gets called when
+the corresponding message is received from the host, which apparently never happens
+in that case.
+This patch works around the issue by restoring the first mentioned message sequence
+for older hosts
+
+Fixes: 0ef58b0a05c1 ("hv_netvsc: change GPAD teardown order on older versions")
+Signed-off-by: Mohammed Gamal <mgamal@redhat.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <alexander.levin@microsoft.com>
+tree b4ddc4c9a36a5d49ddbdc836d4886ebe7a9c71c4
+parent 8943ef69a08f6f354465a275ced137cbbc1c0b39
+author Arnd Bergmann <arnd@arndb.de> 1553529043 +0100
+committer Sasha Levin <sashal@kernel.org> 1555961689 -0400
+
+ARM: iop: don't use using 64-bit DMA masks
+
+[ Upstream commit 2125801ccce19249708ca3245d48998e70569ab8 ]
+
+clang warns about statically defined DMA masks from the DMA_BIT_MASK
+macro with length 64:
+
+ arch/arm/mach-iop13xx/setup.c:303:35: error: shift count >= width of type [-Werror,-Wshift-count-overflow]
+ static u64 iop13xx_adma_dmamask = DMA_BIT_MASK(64);
+                                  ^~~~~~~~~~~~~~~~
+ include/linux/dma-mapping.h:141:54: note: expanded from macro 'DMA_BIT_MASK'
+ #define DMA_BIT_MASK(n) (((n) == 64) ? ~0ULL : ((1ULL<<(n))-1))
+                                                      ^ ~~~
+
+The ones in iop shouldn't really be 64 bit masks, so changing them
+to what the driver can support avoids the warning.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree c85f569dbce02b8f79f20dc328044ce4e4653a77
+parent b9327296e5e7cbc46e8ab27616a96b56b0bece9c
+author Darrick J. Wong <darrick.wong@oracle.com> 1553357429 -0400
+committer Sasha Levin <sashal@kernel.org> 1553808032 -0400
+
+ext4: prohibit fstrim in norecovery mode
+
+[ Upstream commit 18915b5873f07e5030e6fb108a050fa7c71c59fb ]
+
+The ext4 fstrim implementation uses the block bitmaps to find free space
+that can be discarded.  If we haven't replayed the journal, the bitmaps
+will be stale and we absolutely *cannot* use stale metadata to zap the
+underlying storage.
+
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Signed-off-by: Theodore Ts'o <tytso@mit.edu>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+tree 5a3e48fb93a3280a9d9898149076c40bcaecee60
+parent cf2750e6332872d07323e1c8dbb5ea79018bcd97
+author Richard Alpe <richard.alpe@ericsson.com> 1468504927 +0100
+committer Sasha Levin <alexander.levin@verizon.com> 1472152688 -0400
+
+tipc: fix nl compat regression for link statistics
+
+[ Upstream commit 55e77a3e8297581c919b45adcc4d0815b69afa84 ]
+
+Fix incorrect use of nla_strlcpy() where the first NLA_HDRLEN bytes
+of the link name where left out.
+
+Making the output of tipc-config -ls look something like:
+Link statistics:
+dcast-link
+1:data0-1.1.2:data0
+1:data0-1.1.3:data0
+
+Also, for the record, the patch that introduce this regression
+claims "Sending the whole object out can cause a leak". Which isn't
+very likely as this is a compat layer, where the data we are parsing
+is generated by us and we know the string to be NULL terminated. But
+you can of course never be to secure.
+
+Fixes: 5d2be1422e02 (tipc: fix an infoleak in tipc_nl_compat_link_dump)
+Signed-off-by: Richard Alpe <richard.alpe@ericsson.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Sasha Levin <alexander.levin@verizon.com>
+tree ab3090fb37ed059cc99fd36f4a0a169d01381fdf
+parent e16ea38ed78bccfc3fd4dc218d76fe2de471c7f2
+author Gabriel Fernandez <gabriel.fernandez@st.com> 1550380216 -0800
+committer Sasha Levin <sashal@kernel.org> 1551291796 -0500
+
+Input: st-keyscan - fix potential zalloc NULL dereference
+
+[ Upstream commit 2439d37e1bf8a34d437573c086572abe0f3f1b15 ]
+
+This patch fixes the following static checker warning:
+
+drivers/input/keyboard/st-keyscan.c:156 keyscan_probe()
+error: potential zalloc NULL dereference: 'keypad_data->input_dev'
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Gabriel Fernandez <gabriel.fernandez@st.com>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
