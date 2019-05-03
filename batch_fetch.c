@@ -19,7 +19,46 @@ void convert_hex(unsigned char *md, unsigned char *mdstr)
         mdstr[j++] = hex_chars[md[i] & 0x0f];
     }
     mdstr[40] = '\0';
-} 
+}
+
+void recursive_mkdir(char *dir_path)
+{
+    char *tmp = strrchr(dir_path, '/');
+    char *pdir = malloc(strlen(dir_path));
+    memset(pdir, 0, sizeof(pdir));
+    int i = 0;
+    for(i = 0; i < strlen(dir_path) - strlen(tmp); ++i) {
+        pdir[i] = dir_path[i];
+    }
+    pdir[i] = 0;
+    struct stat st = {0};
+    if(stat(pdir, &st) == -1) {
+        mkdir(pdir, 0700);
+    }
+    mkdir(dir_path, 0700);
+    if(pdir)
+    {
+        free(pdir);
+    }
+}
+
+FILE* my_fopen(char *path, char *mode)
+{
+    char* tmp = strrchr(path, '/');
+    char *dir = malloc(strlen(path));
+    memset(dir, 0, sizeof(dir));
+    int i = 0;
+    for(i = 0; i < strlen(path) - strlen(tmp); ++i) {
+        dir[i] = path[i];
+    }
+    dir[i] = 0;
+    recursive_mkdir(dir);
+    if(dir) {
+        free(dir);
+    }
+    return fopen(path, mode);
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -125,7 +164,7 @@ int main(int argc, char *argv[])
         strcpy(refs_heads_path, path);
         strcat(refs_heads_path, "/.git/refs/heads/");
         strcat(refs_heads_path, heads_name);
-        FILE *out2 = fopen(refs_heads_path, "w");
+        FILE *out2 = my_fopen(refs_heads_path, "w");
         fwrite(sha, strlen(sha), 1, out2);
         fwrite("\n", 1, 1, out2);
         fclose(out2);
@@ -182,7 +221,7 @@ cleanup:
 }
 
 /*a test case:
-./batch_fetch https://github.com/pidanself/Testbranch /home/kgao/Testbranch /home/kgao/txt /home/kgao/packfile
+./batch_fetch https://github.com/pidanself/Testbranch /home/kaigao/Testbranch /home/kaigao/txt /home/kaigao/packfile
 082d5e91a657b93e15395d76074316b3b70e57e7;master;0;796;
 be5a7ee90f39b3fc9b7fba0042706a6a33051603;branch2;796;255;
 
