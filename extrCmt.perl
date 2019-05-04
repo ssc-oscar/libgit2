@@ -99,7 +99,7 @@ sub dump_commit {
 
   my $fi = $fhi{commit}; 
   my $fb = $fhb{commit}; 
-  print $fi "$hsha1;$size{commit};$lenC;$cmd{$hsha1}\n";
+  print $fi "$hsha1;$cmd{$hsha1};$size{commit};$lenC\n";
   print $fb $codeC;
   $size{commit} += $lenC;
   return "new";
