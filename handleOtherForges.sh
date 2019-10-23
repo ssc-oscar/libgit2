@@ -7,27 +7,40 @@ do cat $f.get
 done > list$DT.Otr.$ver
 
 split -n l/10 -a 1 -d list$DT.Otr.$ver list$DT.Otr.$ver.
-for i in {0..9}
+for nn in {0..9}
 do mkdir $ver.Otr.$nn
    cd $ver.Otr.$nn
-   cat list$DT.Otr.$ver.$i |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); r=$(echo $r|sed 's|//|//a:a@|'); git clone --mirror $r $rpp;done
-   cat list$DT.Otr.$ver.$i |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$i
-   cat list$Y$abr.${ver}1.$i | while read rpp; do ~/libgit2/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$i.olist.err; done | gzip > New$DT.Otr.${ver}1.$i.olist.gz 
+   mv ../list$DT.Otr.$ver.$nn .
+	cd ..
+done 
+
+for nn in {0..9}
+do cd $ver.Otr.$nn
+   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); r=$(echo $r|sed 's|//|//a:a@|'); git clone --mirror $r $rpp;done
+   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$nn
+   cat list$Y$abr.${ver}1.$nn | while read rpp; do ~/libgit2/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz 
+	cd ../
 done
 
-for i in {0..9}
-do zcat New$DT.Otr.${ver}1.$i.olist.gz | grep ';commit;' | \
-        ~/lookup/Prj2CmtChk.perl /da0_data/basemaps/p2cFullP 32  | lsort 3G -u -t\; -k1b,2| gzip > New$DT.Otr.${ver}1.$i.p2c & 
+for nn in {0..9}
+do cd  $ver.Otr.$nn
+  zcat New$DT.Otr.${ver}1.$nn.olist.gz | grep ';commit;' | \
+        ~/lookup/Prj2CmtChk.perl /da0_data/basemaps/p2cFullP 32  | lsort 3G -u -t\; -k1b,2| gzip > New$DT.Otr.${ver}1.$nn.p2c & 
+  cd ..
 done
 wait
 
-for i in {0..9}; do
-zcat New$DT.Otr.${ver}1.$i.olist.gz | ssh da4 '~/lookup/cleanBlb.perl | ~/bin/hasObj.perl' | gzip > NEW$DT.Otr.${ver}1.todo.$i &
+for nn in {0..9}
+do cd $ver.Otr.$nn
+   zcat New$DT.Otr.${ver}1.$i.olist.gz | ssh da4 '~/lookup/cleanBlb.perl | ~/bin/hasObj.perl' | gzip > NEW$DT.Otr.${ver}1.todo.$nn &
+   cd ..
 done
 wait
 
-for i in {0..9}; do
-zcat New$DT.Otr.${ver}1.todo.$i | perl -I ~/lib/x86_64-linux-gnu/perl ~/libgit2/grabGitI.perl New$DT.Otr.${ver}1.$i 2> New$DT.Otr${ver}1.$i.err &
+for nn in {0..9}; do
+  cd $ver.Otr.$nn
+  zcat New$DT.Otr.${ver}1.todo.$nn | perl -I ~/lib/x86_64-linux-gnu/perl ~/libgit2/grabGitI.perl New$DT.Otr.${ver}1.$nn 2> New$DT.Otr${ver}1.$nn.err &
+  cd ..
 done
 wait
 
