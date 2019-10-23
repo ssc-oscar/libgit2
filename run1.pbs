@@ -1,0 +1,14 @@
+#PBS -N Q1NNN
+#PBS -A ACF-UTK0011
+#PBS -l feature=beacon
+#PBS -l partition=beacon
+#PBS -l nodes=1:ppn=16,walltime=23:50:00
+#PBS -j oe
+#PBS -S /bin/bash
+ver=Q
+DT=201910
+sub=NNN
+c=/lustre/haven/user/audris/${ver}.$sub
+cd $c
+/nics/b/home/audris/bin/doSkylakeUp1.sh $sub ${ver}1 $c $DT list New
+ 
