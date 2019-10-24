@@ -21,7 +21,7 @@ do mkdir $ver.Otr.$nn
 done 
 
 for nn in {0..9}
-do (cd $ver.Otr.$nn; cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); git clone --mirror $r $rpp;done; cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$nn; cat list$Y$abr.${ver}1.$nn | while read rpp; do ~/libgit2/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz; cd ../) &
+do (cd $ver.Otr.$nn; cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); git clone --mirror $r $rpp;done; cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$nn; cat list$DT.Otr.${ver}1.$nn | while read rpp; do ~/libgit2/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz; cd ../) &
 done
 wait
 
@@ -34,7 +34,7 @@ wait
 
 for nn in {0..9}
 do cd $ver.Otr.$nn
-   zcat New$DT.Otr.${ver}1.$i.olist.gz | ssh da4 '~/lookup/cleanBlb.perl | ~/bin/hasObj.perl' | gzip > NEW$DT.Otr.${ver}1.todo.$nn &
+   zcat New$DT.Otr.${ver}1.$nn.olist.gz | ssh da4 '~/lookup/cleanBlb.perl | ~/bin/hasObj.perl' | gzip > NEW$DT.Otr.${ver}1.todo.$nn &
    cd ..
 done
 wait
