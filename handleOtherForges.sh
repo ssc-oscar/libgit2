@@ -22,10 +22,10 @@ done
 
 for nn in {0..9}
 do cd $ver.Otr.$nn 
-   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || git clone --mirror $r $rpp; done &
-   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || git clone --mirror $r $rpp; done &
-   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || git clone --mirror $r $rpp; done &
-   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || git clone --mirror $r $rpp; done &
+   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
+   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
+   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
+   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
    wait
    cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$nn
    cat list$DT.Otr.${ver}1.$nn | while read rpp; do ~/libgit2/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
