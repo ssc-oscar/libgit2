@@ -34,7 +34,7 @@ wait
 
 for nn in {0..9}
 do cd $ver.Otr.$nn
-   zcat New$DT.Otr.${ver}1.$nn.olist.gz | ssh da4 '~/lookup/cleanBlb.perl | ~/bin/hasObj.perl' | gzip > NEW$DT.Otr.${ver}1.todo.$nn &
+   zcat New$DT.Otr.${ver}1.$nn.olist.gz | ssh da4 '~/lookup/cleanBlb.perl | ~/bin/hasObj.perl' | gzip > New$DT.Otr.${ver}1.todo.$nn &
    cd ..
 done
 wait
