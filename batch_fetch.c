@@ -42,7 +42,7 @@ void recursive_mkdir(char *dir_path)
     }
 }
 
-FILE* my_fopen(char *path, char *mode)
+FILE* my_fopen(char *path, unsigned char *mode)
 {
     char* tmp = strrchr(path, '/');
     char *dir = malloc(strlen(path));
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     //Here I assume that a sha;name;offset;length in a line
     while(getline(&l0, &size, stdin) >= 0) {
         char *sha = strtok(l0, seps);
-        
+        int i; 
         char *heads_name = strtok(NULL, seps);
         int offset = atoi(strtok(NULL, seps));
         int length = atoi(strtok(NULL, seps));
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
         strcpy(obj_dir_path, path);
         strcat(obj_dir_path, "/.git/objects/");
         char obj_dir_name[3];
-        for(int i = 0; i < 2; i++) {
+        for (i = 0; i < 2; i++) {
             obj_dir_name[i] = mdstr[i];
         }
         obj_dir_name[2] = 0;
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         strcpy(obj_file_path, obj_dir_path);
         strcat(obj_file_path, "/");
         char obj_file_name[40];
-        for(int i = 0; i < 38; i++) {
+        for (i = 0; i < 38; i++) {
             obj_file_name[i] =  mdstr[i+2];
         }
         obj_file_name[38] = 0;
