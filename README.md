@@ -47,9 +47,14 @@ Another approach to do the same but in a batch mode can be accomplished (on, e.g
 * run1.pbs  - extracts objects in the list todo (obtained by filtering the extracted objects against the ones in WoC)
 
 
+# to build
 
-
-
+```
+mkdir build && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME
+cmake --build .
+cmake --build . --target install
+```
 
 TODO
 ____
