@@ -28,28 +28,28 @@ do cd $ver.Otr.$nn
    tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
    wait
    cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$nn
-   cat list$DT.Otr.${ver}1.$nn | while read rpp; do ~/libgit2/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
+   cat list$DT.Otr.${ver}1.$nn | while read rpp; do $HOME/bin/gitListSimp.sh $rpp | $HOME/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
    cd ../
 done
 wait
 
 for nn in {0..9}
 do cd  $ver.Otr.$nn
-  zcat New$DT.Otr.${ver}1.$nn.olist.gz | grep ';commit;' | ~/lookup/Prj2CmtChk.perl /da0_data/basemaps/p2cFullP 32  | lsort 3G -u -t\; -k1b,2| gzip > New$DT.Otr.${ver}1.$nn.p2c & 
+  zcat New$DT.Otr.${ver}1.$nn.olist.gz | grep ';commit;' | $HOME/lookup/Prj2CmtChk.perl /da0_data/basemaps/p2cFullP 32  | lsort 3G -u -t\; -k1b,2| gzip > New$DT.Otr.${ver}1.$nn.p2c & 
   cd ..
 done
 wait
 
 for nn in {0..9}
 do cd $ver.Otr.$nn
-   zcat New$DT.Otr.${ver}1.$nn.olist.gz | ssh da4 '~/lookup/cleanBlb.perl | ~/bin/hasObj.perl' | gzip > New$DT.Otr.${ver}1.todo.$nn &
+   zcat New$DT.Otr.${ver}1.$nn.olist.gz | ssh da4 '$HOME/lookup/cleanBlb.perl | $HOME/bin/hasObj.perl' | gzip > New$DT.Otr.${ver}1.todo.$nn &
    cd ..
 done
 wait
 
 for nn in {0..9}; do
   cd $ver.Otr.$nn
-  zcat New$DT.Otr.${ver}1.todo.$nn | perl -I ~/lib/x86_64-linux-gnu/perl ~/libgit2/grabGitI.perl New$DT.Otr.${ver}1.$nn 2> New$DT.Otr${ver}1.$nn.err &
+  zcat New$DT.Otr.${ver}1.todo.$nn | perl -I ~/lib/x86_64-linux-gnu/perl $HOME/bin/grabGitI.perl New$DT.Otr.${ver}1.$nn 2> New$DT.Otr${ver}1.$nn.err &
   cd ..
 done
 wait
