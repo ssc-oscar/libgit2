@@ -36,6 +36,7 @@ wait
 for nn in {0..9}
 do cd  $ver.Otr.$nn
   zcat New$DT.Otr.${ver}1.$nn.olist.gz | grep ';commit;' | ~/lookup/Prj2CmtChk.perl /da0_data/basemaps/p2cFullP 32  | lsort 3G -u -t\; -k1b,2| gzip > New$DT.Otr.${ver}1.$nn.p2c & 
+  cat list$DT.Otr.Q1.$nn | while read i; do [[ -f $i/packed-refs ]] && echo $i/packed-refs;done | cpio -o | gzip > ../list$DT.Otr.Q1.$nn.cpio.gz &
   cd ..
 done
 wait
