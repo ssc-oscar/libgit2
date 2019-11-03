@@ -22,35 +22,40 @@ done
 
 for nn in {0..9}
 do cd $ver.Otr.$nn 
-   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || git clone --mirror $r $rpp; done &
-   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || git clone --mirror $r $rpp; done &
-   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || git clone --mirror $r $rpp; done &
-   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || git clone --mirror $r $rpp; done &
+   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
+   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
+   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
+   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
    wait
    cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$nn
-   cat list$DT.Otr.${ver}1.$nn | while read rpp; do ~/libgit2/gitListSimp.sh $rpp | /usr/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
+   cat list$DT.Otr.${ver}1.$nn | while read rpp; do $HOME/bin/gitListSimp.sh $rpp | $HOME/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
    cd ../
 done
 wait
 
 for nn in {0..9}
 do cd  $ver.Otr.$nn
-  zcat New$DT.Otr.${ver}1.$nn.olist.gz | grep ';commit;' | ~/lookup/Prj2CmtChk.perl /da0_data/basemaps/p2cFullP 32  | lsort 3G -u -t\; -k1b,2| gzip > New$DT.Otr.${ver}1.$nn.p2c & 
+  # fixP.perl in libgit2 is for keeping the mapping of the urls to project names consistent
+  zcat New$DT.Otr.${ver}1.$nn.olist.gz | grep ';commit;' | ~/bin/fixP.perl | $HOME/lookup/Prj2CmtChk.perl /da0_data/basemaps/p2cFullP 32  | lsort 3G -u -t\; -k1b,2| gzip > New$DT.Otr.${ver}1.$nn.p2c & 
   cat list$DT.Otr.Q1.$nn | while read i; do [[ -f $i/packed-refs ]] && echo $i/packed-refs;done | cpio -o | gzip > ../list$DT.Otr.Q1.$nn.cpio.gz &
+  # in case the olist is split into 16 pieces
+  #for i in {00..15}; do zcat New$DT.Otr${ver}1.$nn.$i.olist.gz | grep ';commit;'; done ~/bin/fixP.perl | ~/lookup/Prj2CmtChk.perl /fast/p2cFullP 32 | lsort 30G -u -t\; -k1b,2| gzip > New$DT.Otr.${ver}1.$nn.p2c
   cd ..
 done
 wait
 
 for nn in {0..9}
 do cd $ver.Otr.$nn
-   zcat New$DT.Otr.${ver}1.$nn.olist.gz | ssh da4 '~/lookup/cleanBlb.perl | ~/bin/hasObj.perl' | gzip > New$DT.Otr.${ver}1.todo.$nn &
+   zcat New$DT.Otr.${ver}1.$nn.olist.gz | ssh da4 '$HOME/lookup/cleanBlb.perl | $HOME/bin/hasObj.perl' | gzip > New$DT.Otr.${ver}1.todo.$nn &
    cd ..
 done
 wait
 
 for nn in {0..9}; do
   cd $ver.Otr.$nn
-  zcat New$DT.Otr.${ver}1.todo.$nn | perl -I ~/lib/x86_64-linux-gnu/perl ~/libgit2/grabGitI.perl New$DT.Otr.${ver}1.$nn 2> New$DT.Otr${ver}1.$nn.err &
+  zcat New$DT.Otr.${ver}1.todo.$nn | perl -I ~/lib/x86_64-linux-gnu/perl $HOME/bin/grabGitI.perl New$DT.Otr.${ver}1.$nn 2> New$DT.Otr${ver}1.$nn.err
+#check if objects are correct
+  for t in blob tag commit tree;do ls -f  *$nn.*$t.bin  | sed 's/\.bin$//' | while read i; do (echo $i; perl -I ~/lib64/perl5/ ~/lookup/checkBin1in.perl $t $i) &>> ../Otr$ver$nn.$t.err; done; done
   cd ..
 done
 wait
