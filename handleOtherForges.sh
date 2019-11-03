@@ -28,7 +28,8 @@ do cd $ver.Otr.$nn
    tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|^a:a@||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d $rpp ]] || (git clone --mirror $r $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
    wait
    cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$nn
-   cat list$DT.Otr.${ver}1.$nn | while read rpp; do $HOME/bin/gitListSimp.sh $rpp | $HOME/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
+   #cat list$DT.Otr.${ver}1.$nn | while read rpp; do $HOME/bin/gitListSimp.sh $rpp | $HOME/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
+   cat list$DT.Otr.${ver}1.$nn | while read rpp; do $HOME/bin/list $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
    cd ../
 done
 wait
