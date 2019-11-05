@@ -38,7 +38,8 @@ for l in {0..15}
 do l=$(($l+$off))
   [[ $l -lt 10 ]] && l="0$l" 
   if [[ -f CopyList.$k.$m.$l ]]; then 
-     (cat $cloneDir/CopyList.$k.$m.$l | while read repo; do [[ -d $cloneDir/$repo/ ]] && $HOME/bin/gitListSimp.sh $repo | $HOME/bin/classify $repo 2>> $cloneDir/$base.$m.$l.olist.err; done | gzip > $cloneDir/$base.$m.$l.olist.gz) &
+     (cat $cloneDir/CopyList.$k.$m.$l | while read repo; do [[ -d $cloneDir/$repo/ ]] &&  $HOME/bin/list $repo 2>> $cloneDir/$base.$m.$l.olist.err; done | gzip > $cloneDir/$base.$m.$l.olist.gz) &
+     #(cat $cloneDir/CopyList.$k.$m.$l | while read repo; do [[ -d $cloneDir/$repo/ ]] && $HOME/bin/gitListSimp.sh $repo | $HOME/bin/classify $repo 2>> $cloneDir/$base.$m.$l.olist.err; done | gzip > $cloneDir/$base.$m.$l.olist.gz) &
      #(cd /tmp/;cat $cloneDir/CopyList.$k.$m.$l | while read repo; do [[ -d $cloneDir/$repo/ ]] && (rsync -a $cloneDir/$repo/ .;$HOME/bin/gitListSimp.sh $repo | $HOME/bin/classify $repo 2>> $cloneDir/$base.$m.$l.olist.err); done | gzip > $cloneDir/$base.$m.$l.olist.gz) &
      #(cat CopyList.$k.$m.$l | while read repo; do [[ -d $cloneDir/$repo/ ]] && $HOME/bin/gitList.sh $repo | $HOME/bin/classify $repo 2>> $cloneDir/$base.$m.$l.olist.err; done | gzip > $cloneDir/$base.$m.$l.olist.gz; gunzip -c $cloneDir/$base.$m.$l.olist.gz | perl -I $HOME/lib/perl5 $HOME/bin/grabGit.perl $cloneDir/$base.$m.$l 2> $cloneDir/$base.$m.$l.err) &
      #(gunzip -c $cloneDir/$base.$m.$l.olist.gz | perl -I $HOME/lib/perl5 $HOME/bin/grabGit.perl $cloneDir/$base.$m.$l 2> $cloneDir/$base.$m.$l.err) &
