@@ -49,7 +49,7 @@ static void show_commit_body (git_commit *commit)
 /** Helper to print a commit object. */
 static void print_commit(git_commit *commit)
 {
-  char buf[300*(GIT_OID_HEXSZ + 1)];  
+  // char buf[300*(GIT_OID_HEXSZ + 1)];  
   char tidstr[GIT_OID_HEXSZ + 1];
   char cidstr[GIT_OID_HEXSZ + 1];
   const git_signature *sig;
@@ -57,10 +57,15 @@ static void print_commit(git_commit *commit)
   
   git_oid_tostr(tidstr, sizeof(tidstr), git_commit_tree_id(commit));
   size_t i, max_i = (unsigned int)git_commit_parentcount(commit);
-  if (max_i > 299){
-    fprintf (stderr, "too many parents: %ld\n", max_i);
-    max_i = 299;
+  char * buf = malloc ((max_i+1)*(GIT_OID_HEXSZ + 1));
+  if (buf == NULL){
+    fprintf (stderr, "can not allocate %ld parents\n", max_i);
+    return;
   }
+  //if (max_i > 299){
+  //  fprintf (stderr, "too many parents: %ld\n", max_i);
+  //  max_i = 299;
+  //}
   buf[0]=0;
   buf[1]=0;
   for (i = 0; i < max_i; ++i) {
@@ -74,6 +79,7 @@ static void print_commit(git_commit *commit)
   printf("%s;%s;%s;%ld\n", cidstr, tidstr, buf+1, git_commit_time(commit));
   show_commit_body (commit);
   printf("%s;%s;%s;%ld\n", cidstr, tidstr, buf+1, git_commit_time(commit));
+  free (buf);
 }
 
 
