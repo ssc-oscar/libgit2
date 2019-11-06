@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -I $HOME/lib/x86_64-linux-gnu/perl
 
 use strict;
 use warnings;
