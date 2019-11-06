@@ -43,8 +43,8 @@ while(<STDIN>){
   %cmd = ();
  }
  if ($type eq "blob"){
-		#$cmd{$type}{$sha}{$file}++;
-		$cmd{$type}{$sha}++;
+  #$cmd{$type}{$sha}{$file}++;
+  $cmd{$type}{$sha}++;
  }else{
   $cmd{$type}{$sha}++;
  }
@@ -58,10 +58,10 @@ sub output {
   open A, ">$fnam";
   while (my ($k, $v) = each %{$cmd{$type}}){
    if ($type eq "blob"){
-				#for my $h (keys %{$v}){
-				#	print A "$k;$h\n";
-				#}
-        print A "$k\n";
+    #for my $h (keys %{$v}){
+    #	print A "$k;$h\n";
+    #}
+    print A "$k\n";
    }else{
     print A "$k\n";
    }
