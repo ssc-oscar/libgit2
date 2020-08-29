@@ -17,6 +17,7 @@ RUN apt-get update && \
     lsof sudo \
     sssd \
     sssd-tools \
+	 cpio \
     vim pkg-config  libssh2-1 libssh2-1-dev \
     git iputils-ping rsync net-tools bc \
     curl lsb-release \

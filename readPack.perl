@@ -71,7 +71,7 @@ while (length ($str1) > 6){
       print "left1 = ".(length($str1))."\n";
       my $hh = substr($str1, 0, 20);
       $sha = unpack "H*", $hh;
-      print "base sha=$sha\n";
+      print "base t=$t0 sha=$sha\n";
       $str1 = substr($str1, 20, length($str1)-20);
       $offset += 20;
       my ($inf, $status) = new Compress::Raw::Zlib::Inflate( -Bufsize => 300 );
@@ -102,6 +102,7 @@ while (length ($str1) > 6){
           } 
           print "cnt=$cnt left=".(length($code))."\n";
         }else{	
+	  print "no string do=$do length(code)-do)=".(length($code)-$do)."\n" if length($code)-$do <= 0;
 	  my $copy = substr($code, 0, $do);
 	  $code = substr($code, $do, length($code)-$do);
 	  print "len=$do copy=$copy\n";
