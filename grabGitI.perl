@@ -69,7 +69,7 @@ sub output {
     close A;
 
   if ($type eq "tree"){
-   open A, "cat $fnam | $ENV{HOME}/bin/grabft $dir |";
+   open A, "cat $fnam | /usr/bin/grabft $dir |";
    my $state = 0;
      my ($rem, $line) = ("", "");
      while (<A>){
@@ -102,7 +102,7 @@ sub output {
    }
    }
   if ($type eq "commit"){
-   open A, "cat $fnam | $ENV{HOME}/bin/grabc $dir |";
+   open A, "cat $fnam | /usr/bin/grabc $dir |";
       my $state = 0;
       my ($rem, $line) = ("", "");
         while (<A>){
@@ -136,7 +136,7 @@ sub output {
    }
   }
   if ($type eq "tag"){
-   open A, "cat $fnam  | $ENV{HOME}/bin/grabtag $dir |";
+   open A, "cat $fnam  | /usr/bin/grabtag $dir |";
      my $state = 0;
     my ($rem, $line) = ("", "");
       while (<A>){
@@ -173,7 +173,7 @@ sub output {
       close A;
   }
   if ($type eq "blob"){
-   open A, "cat $fnam  | $ENV{HOME}/bin/grabf $dir |";
+   open A, "cat $fnam  | /usr/bin/grabf $dir |";
    my $state = 0;
      my ($rem, $line) = ("", "");
      while (<A>){

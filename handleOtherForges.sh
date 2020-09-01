@@ -9,43 +9,93 @@ DT=201910
 ver=Q
 DT=202003
 ver=R
+PDT=202003
+DT=202009
+ver=S
 
-for f in bitbucket$DT.new.*.heads git.debian.org.$DT.*.heads drupal.com.$DT.heads sf$DT.prj.*.heads repo.or.cz.$DT.heads gl$DT.new.heads git.zx2c4.com.$DT.heads git.savannah.gnu.org.$DT.heads git.postgresql.org.$DT.heads git.kernel.org.$DT.heads git.eclipse.org.$DT.heads cgit.kde.org.$DT.heads bioconductor.org.$DT.heads android.googlesource.com.$DT.heads git.postgresql.org.$DT.heads
+
+for f in gitlab.gnome.org.$DT.heads  gl$DT.new.heads bitbucket$DT.new.*.heads git.debian.org.$DT.*.heads drupal.com.$DT.heads sf$DT.prj.*.heads repo.or.cz.$DT.heads gl$DT.new.heads git.zx2c4.com.$DT.heads git.savannah.nongnu.org.$DT.heads git.savannah.gnu.org.$DT.heads git.postgresql.org.$DT.heads git.kernel.org.$DT.heads git.eclipse.org.$DT.heads cgit.kde.org.$DT.heads bioconductor.org.$DT.heads android.googlesource.com.$DT.heads git.postgresql.org.$DT.heads
 do zcat $f | grep -v 'could not connect' | perl -ane 'chop(); ($u, @h) = split (/\;/, $_, -1); for $h0 (@h){print "$h0;$#h;$u\n" if $h0=~m|^[0-f]{40}$|}' | ssh da5 perl -I ~/lib64/perl5 ~/lookup/hasObj2.perl | cut -d\; -f3 | uniq 
-done | sed 's|/a:a@|/|' > list$DT.Otr.$ver.nogl
-
-for f in gitlab.gnome.org.$DT.heads  gl$DT.new.heads
-do zcat $f | grep -v 'could not connect' | perl -ane 'chop(); ($u, @h) = split (/\;/, $_, -1); for $h0 (@h){print "$h0;$#h;$u\n" if $h0=~m|^[0-f]{40}$|}' | ssh da5 perl -I ~/lib64/perl5 ~/lookup/hasObj2.perl | cut -d\; -f3 | uniq
-done > list$DT.Otr.$ver.gl
+done | sed 's|/a:a@|/|' > list$DT.Otr.$ver
 
 
 split -n l/10 -a 2 --numeric-suffixes=10 list$DT.Otr.$ver.gl list$DT.Otr.$ver.
 
 
-for f in gh$DT.u.[03-5][0-9].heads
+for f in gh$DT.u.*.heads gh$PDT.u.*.heads
 do zcat $f | grep -v 'could not connect' | perl -ane 'chop(); ($u, @h) = split (/\;/, $_, -1); for $h0 (@h){print "$h0;$#h;$u\n" if $h0=~m|^[0-f]{40}$|}' | ssh da5 perl -I ~/lib64/perl5 ~/lookup/hasObj2.perl | cut -d\; -f3 | uniq 
-done | sed 's|/a:a@|/|' > list$DT.$ver.no10-20
-
-for f in gh$DT.u.[12][0-9].heads1
-do zcat $f | grep -v 'could not connect' | perl -ane 'chop(); ($u, @h) = split (/\;/, $_, -1); for $h0 (@h){print "$h0;$#h;$u\n" if $h0=~m|^[0-f]{40}$|}' | ssh da5 perl -I ~/lib64/perl5 ~/lookup/hasObj2.perl | cut -d\; -f3 | uniq 
-done | sed 's|/a:a@|/|' > list$DT.$ver.10-20
-
+done | sed 's|/a:a@|/|' > list$DT.$ver
 
 #do GH (make sure it fits in 100 bins)
-split -l 170000 -a 2 -d list$DT.$ver.no10-20 list$DT.$ver.
-for nn in {00..19}
+split -l 170000 -a 2 -d list$DT.$ver list$DT.$ver.
+for nn in {00..85}
 do mkdir $ver.$nn
    cd $ver.$nn
    mv ../list$DT.$ver.$nn .
    cd ..
 done 
-split -l 170000 -a 2 --numeric-suffixes=20 list$DT.$ver.10-20 list$DT.$ver.
 ######################
-# run these batches on ACF servers: see doA.sh, run.sh (create todo, see belopw), then run1.sh
+# run these batches on ACF servers: see doS1.sh, run.pbs (create todo, see belopw), then run1.pbs
 ######################
+# see doS.sh 
+# 
+# echo $i|perl -ane 's|^gh:||;s|^bb:|bitbucket.org_|;s|^gl:|gitlab.com_|;s|^dr:|drupal.com_|;s!https://(git.zx2c4.com|git.savannah.gnu.org|git.savannah.nongnu.org|android.googlesource.com|git.bioconductor.org|git.code.sf.net|git.kernel.org|git.postgresql.org|repo.or.cz|git.eclipse.org)/!$1_!;s!^https://a:a\@(salsa.debian.org|gitlab.gnome.org)/!$1_!;s|$/||;s|/|_|;s|\.git$||;print'
 
+# missing in 202009 
+add https://pagure.io/ #does not look too active
+0xacab.org/explore !update!
+android.git.kernel.org # old
+anongit.kde.org   # need complicated !update!
+blitiri.com.ar #https://blitiri.com.ar/git/    update
+code.ill.fr   # update
+code.qt.io    # update
+drupalcode.org   # old?
+fedorapeople.org # update
+forge.softwareheritage.org # need login
+forgemia.inra.fr/explore #update 
+framagit.org #update 
+g-rave.nl #dead
+gary.hai  #??? fix
+gcc.gnu.org           #https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git !update!
+git.alpinelinux.org   # tiny !update!
+git.apache.org        #https://gitbox.apache.org/repos/asf !update!
+git.bde-insa-lyon.fr  # old
+git.berlios.de        # old
+gitweb.cairographics.org #no urls, need to know projects?
+git.drupalcode.org   # old? 
+git.freedesktop.org # !update!
+git.gnu.io/explore   #  got to gitlab.freedesktop.org
+git.openembedded.org # !update!
+git.pleroma.social/explore # !update!
+git.plt-scheme.org #dead?
+git.sv.gnu.org  # fix -> http://git.savannah.gnu.org
+git.torproject.org # !update!
+git.unicaen.fr/explore # !update!
+git.unistra.fr/explore # !update!
+git.xfce.org   # !update!
+git.yoctoproject.org # !update!
+gite.lirmm.fr #https://gite.lirmm.fr/explore - !update!
+github.com   # fix
+gitlab.adullact.net  # not just git, e.g https://adullact.net/scm/?group_id=613
+gitlab.cerema.fr/explore    #few projects
+gitlab.common-lisp.net #https://gitlab.common-lisp.net/explore/projects - !update!
+gitlab.fing.edu.uy/explore #- !update!
+gitlab.freedesktop.org #https://gitlab.freedesktop.org/explore - !update!
+gitlab.huma-num.fr/explore #!update!
+gitlab.inria.fr/explore  #!update!
+gitlab.irstea.fr/explore #!update!
+gitlab.ow2.org  #https://gitlab.ow2.org/explore - !update!
+gitorious.org  #old
+jim.severino    #??
+ninkendo.org    # dead?
+notabug.org     #https://notabug.org/explore/repos - !update!
+phabricator.wikimedia.org #see below
+rubyforge.org #old
+secure.phabricator.com  #https://secure.phabricator.com/project/ appears old?
+source.winehq.org #old
+sourceforge.net  # why no new updates?
+www.happyassassin.net #appears old
 
-#Otherwise run this anywhere
 split -n l/10 -a 1 -d list$DT.Otr.$ver.nogl list$DT.Otr.$ver.
 for nn in {0..9}
 do mkdir $ver.Otr.$nn
@@ -54,20 +104,7 @@ do mkdir $ver.Otr.$nn
    cd ..
 done 
 
-for nn in {0..9}
-do cd $ver.Otr.$nn 
-   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|a:a@||;s|^https://||;s|:|_|;s|/|_|;s|\.git$||');rr=$(echo $r| sed 's|a:a@||;s|^https://|https://a:a@|'); [[ -d $rpp ]] || (git clone --mirror "$rr" $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
-   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|a:a@||;s|^https://||;s|:|_|;s|/|_|;s|\.git$||'); rr=$(echo $r| sed 's|a:a@||;s|^https://|https://a:a@|');[[ -d $rpp ]] || (git clone --mirror "$rr" $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
-   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|a:a@||;s|^https://||;s|:|_|;s|/|_|;s|\.git$||'); rr=$(echo $r| sed 's|a:a@||;s|^https://|https://a:a@|');[[ -d $rpp ]] || (git clone --mirror "$rr" $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
-   tac list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|a:a@||;s|^https://||;s|:|_|;s|/|_|;s|\.git$||'); rr=$(echo $r| sed 's|a:a@||;s|^https://|https://a:a@|'); [[ -d $rpp ]] || (git clone --mirror "$rr" $rpp; [[ $r =~ salsa.debian ]] && sleep 20); done &
-   wait
-   cat list$DT.Otr.$ver.$nn |  while read r; do rpp=$(echo $r| sed 's|^https://||;s|:|_|;s|/|_|;s|\.git$||'); [[ -d "$rpp" ]] && echo $rpp; done > list$DT.Otr.${ver}1.$nn
-   #cat list$DT.Otr.${ver}1.$nn | while read rpp; do $HOME/bin/gitListSimp.sh $rpp | $HOME/bin/classify $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
-   #sed "s/NNN/1/;s/MACHINE/beacon/;s/=23/=13/" run.pbs | qsub
-   cat list$DT.Otr.${ver}1.$nn | while read rpp; do $HOME/bin/list $rpp 2>> New$DT.Otr.${ver}1.$nn.olist.err; done | gzip > New$DT.Otr.${ver}1.$nn.olist.gz
-   cd ../
-done
-wait
+#check fixP2.perl to make sure ver R and ver S have the same project names
 
 for nn in {0..9}
 do cd  $ver.Otr.$nn
