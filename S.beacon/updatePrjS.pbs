@@ -1,0 +1,147 @@
+#PBS -N updatePR.WHAT.PART
+#PBS -A ACF-UTK0011
+#PBS -l feature=MACHINE
+#PBS -l partition=MACHINE
+#PBS -l nodes=1:ppn=1,walltime=23:50:00
+#PBS -j oe
+#PBS -S /bin/bash
+LD_LIBRARY_PATH=$HOME/lib:$HOME/lib64:$LD_LIBRARY_PATH
+c=/lustre/haven/user/audris/gz
+cd $c
+machine=MACHINE
+maxM=5000
+[[ $machine == monster ]] && maxM=30000
+[[ $machine == rho ]] && maxM=900
+[[ $machine == sigma ]] && maxM=2900
+
+
+#inc=00 Othr.* + 00..21
+inc=02
+ver=S
+prt=PART
+
+if test 'WHAT' = 'START'; then
+
+for f in $ver/*.p2c
+do zcat $f | awk -F\; '{ print $2";"$1}' | perl -ane 'print if $_ =~ m/^[0-f]{40};/'
+done | $HOME/lookup/splitSec.perl c2p$ver$inc. 128
+#done | perl $HOME/lookup/fixP1.perl | $HOME/lookup/splitSec.perl c2p$ver$inc. 32
+echo c2p$ver$inc.
+
+fi
+if test 'WHAT' = 'SRT0'; then
+
+for i in {0..7}
+do j=$(($prt*8+$i))
+  zcat c2p$ver$inc.$j.gz | $HOME/bin/lsort ${maxM}M -t\; -k1,2 -u | gzip > c2p$ver$inc.$j.s
+  echo c2p$ver$inc.$j.s
+done 
+
+fi
+if test 'WHAT' = 'invt'; then
+
+for i in {0..15}
+do j=$(($prt*16+$i))
+   zcat c2p$ver$inc.$j.s 
+done | awk -F\; '{print $2";"$1}' | perl -I ~/lib/perl5 -I ~/lookup $HOME/lookup/splitSecCh.perl p2c$ver$inc.$prt. 128 
+echo p2c$ver$inc.$prt.
+
+fi
+if test 'WHAT' = 'ISRT0'; then
+
+j=$prt
+for i in {0..127}
+do zcat p2c$ver$inc.$j.$i.gz | $HOME/bin/lsort ${maxM}M -t\; -k1,1 | gzip > p2c$ver$inc.$j.$i.s 
+   echo p2c$ver$inc.$j.$i.s
+done
+
+fi
+if test 'WHAT' = 'IMRG0'; then
+
+for i in {0..15}
+do j=$(($prt*16+$i))
+  str="$HOME/bin/lsort ${maxM}M -t\; -k1,1 --merge"
+  for k in {0..7}
+  do str="$str <(zcat p2c$ver$inc.$k.$j.s)"
+  done
+  eval $str | gzip > p2c$ver$inc.$j.s 
+  echo p2c$ver$inc.$j.s
+done
+
+fi
+if test 'WHAT' = 'MERGEc2p'; then
+
+for i in {0..15}
+do j=$(($prt*16+$i))
+   $HOME/bin/lsort ${maxM}M -t\; -k1,2 --merge -u <(zcat c2p${ver}00.$j.s) <(zcat c2p${ver}01.$j.s) <(zcat c2p${ver}02.$j.s) <(zcat c2pFullR$j.s) | perl -ane 'print if $_ =~ m/^[0-f]{40};/' | uniq | gzip > c2pFull$ver$j.s 
+   echo c2pFull$ver$j.s
+done
+
+fi
+if test 'WHAT' = 'CORRECT'; then
+
+#ensure that after name correction everything is sorted
+for j in {0..15}
+do zcat c2pFull$ver$j.s | $HOME/bin/lsort ${maxM}M -t\; -k1,2  -u | gzip > c2pFull$ver$j.s2 &
+done
+wait
+echo c2pFull$ver$j.s2
+for j in {16..31}
+do zcat c2pFull$ver$j.s | $HOME/bin/lsort ${maxM}M -t\; -k1,2  -u | gzip > c2pFull$ver$j.s2 &
+done
+wait
+echo c2pFull$ver$j.s2
+
+fi
+if test 'WHAT' = 'MERGEp2c'; then
+
+for i in {0..15}
+do j=$(($prt*16+$i))
+  $HOME/bin/lsort ${maxM}M -t\; -k1,2 --merge -u <(zcat p2cFullR$j.s) <(zcat p2c${ver}00.$j.s) <(zcat p2c${ver}01.$j.s) <(zcat p2c${ver}02.$j.s) | uniq | perl -ane 'print if $_ =~ m/;[0-f]{40}$/' | uniq | gzip > p2cFull$ver$j.s 
+  echo p2cFull$ver$j.s
+done
+
+fi 
+if test 'WHAT' = 'PS'; then
+
+for i in {0..15}
+do j=$(($prt*16+$i))
+   zcat p2cFull$ver.$j.s|cut -d\; -f1| uniq | gzip > p$ver.$j.s &
+done
+wait
+echo p$ver.$j.s
+
+fi
+if test 'WHAT' = 'DEFORK'; then
+
+for i in {0..15}
+do j=$(($prt*16+$i))
+   zcat c2pFull$ver.$j.s | perl ~/lookup/mp.perl 1 p2P$ver.s | uniq | gzip > c2PFull$ver$j.s0 &
+   echo c2PFull$ver$j.s
+done
+wait
+# need to sort, invert for P2c
+
+
+fi
+if test 'WHAT' = 'SPLITc2p'; then
+
+ver=R
+#for i in {0..3}
+#do j=$(($prt*4+$i))
+j=$prt
+  zcat c2pFull$ver$j.s | perl -I ~/lib/perl5 -I ~/lookup $HOME/lookup/splitSec.perl c2pFull$ver.$j. 128
+  echo c2pFull$ver.$j.
+#done
+  
+fi
+if test 'WHAT' = 'SPLITp2c'; then
+
+ver=R
+for i in {0..3}
+do j=$(($prt*4+$i))
+  zcat p2cFull$ver$j.s | perl -I ~/lib/perl5 -I ~/lookup $HOME/lookup/splitSecCh.perl p2cFull$ver.$j. 128
+  echo p2cFull$ver.$j.
+done
+  
+fi

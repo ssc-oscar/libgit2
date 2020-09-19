@@ -135,3 +135,10 @@ wait
 
 # check what path is in .idx
 #sed -i 's/;gitlab.com_/;gl_/' New$Y$abr${ver}1.*.idx
+
+DT=202009
+ver=Otr.R
+for nn in {0..8} 10
+do cd ../$ver.$nn
+   zcat *.olist.gz |grep ';commit;' | sed 's|/;|;|;s|\.git;|;|' | $HOME/lookup/Prj2CmtChk.perl /fast/p2cFullR 32 | lsort 30G -u -t\; -k1,2| gzip > New$DT.${ver}1.$nn.p2c
+done   

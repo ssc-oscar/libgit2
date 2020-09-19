@@ -1,0 +1,21 @@
+#PBS -N SNNN.MMM
+#PBS -A ACF-UTK0011
+#PBS -l feature=beacon
+#PBS -l partition=beacon
+#PBS -l nodes=1:ppn=1,walltime=23:50:00
+#PBS -j oe
+#PBS -S /bin/bash
+ver=S
+#DT=201910.Otr
+DT=202009.Otr
+DT=202009
+sub=NNN
+prt=MMM
+#c=/lustre/haven/user/audris/${ver}.Otr.$sub
+c=/lustre/haven/user/audris/Otr.${ver}.$sub
+c=/lustre/haven/user/audris/${ver}.$sub
+#c=/lustre/haven/user/audris/${ver}.Otr.$sub
+cd $c
+[[ -f todo ]] || zcat todo.[01][0-9] | gzip > todo
+/nics/b/home/audris/bin/doSkylakeUp1i.sh $sub ${ver}1 $c $DT list New $prt
+ 

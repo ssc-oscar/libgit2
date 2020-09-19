@@ -1,0 +1,36 @@
+#PBS -N S.NNN.MMM
+#PBS -A ACF-UTK0011
+#PBS -l feature=beacon
+#PBS -l partition=beacon
+#PBS -l nodes=1:ppn=1,walltime=23:50:00
+#PBS -j oe
+#PBS -S /bin/bash
+
+ver=S
+#DT=201910.Otr
+DT=202009.Otr
+DT=202009
+sub=NNN
+prt=MMM
+#sub1=$(echo $sub | sed 's/\.[0-9]$//')
+sub1=$sub
+c=/lustre/haven/user/audris/Otr.$ver.$sub1
+c=/lustre/haven/user/audris/$ver.$sub1
+#c=/lustre/haven/user/audris/$ver.$sub1
+#c=/lustre/haven/user/audris/$ver.$sub1
+cd $c
+
+if [[ -f CopyList.${ver}1.$sub ]]
+then 
+  echo have
+else
+  #cat list$DT.${ver}1.$sub  | while read l; do [[ -d $l ]] && echo $l; done > CopyList.${ver}1.$sub
+  cp list$DT.${ver}1.$sub  CopyList.${ver}1.$sub
+  nlines=$(cat CopyList.${ver}1.$sub |wc -l)
+  part=$(echo "$nlines/16 + 1"|bc)
+  cat CopyList.${ver}1.$sub | split -l $part --numeric-suffixes - CopyList.${ver}1.$sub.
+fi
+
+/nics/b/home/audris/bin/doBeaconUpIi.sh $sub ${ver}1 $c $DT list New $prt
+cd $c
+zcat *.$prt.olist.gz | ssh da5.eecs.utk.edu '$HOME/lookup/cleanBlb.perl | $HOME/bin/hasObj.perl' | gzip > todo.$prt
