@@ -1,0 +1,6 @@
+#!/bin/bash
+export LC_ALL=C 
+export LANG=C  
+sz=${1:-10G}
+shift
+sort -T. -S $sz --compress-program=gzip $@ 

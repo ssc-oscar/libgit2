@@ -1,0 +1,110 @@
+=head2 Mon Feb 25 05:03:28 2019: C<Module> L<Compress::LZF|Compress::LZF>
+
+=over 4
+
+=item *
+
+C<installed into: /home/audris//share/perl/5.26.1>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 3.41>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Mar  1 04:33:35 2019: C<Module> L<Compress::LZF|Compress::LZF>
+
+=over 4
+
+=item *
+
+C<installed into: /home/audris/share/perl/5.26.1>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 3.41>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Sat Sep 19 16:59:28 2020: C<Module> L<TokyoCabinet|TokyoCabinet>
+
+=over 4
+
+=item *
+
+C<installed into: /home/audris/share/perl/5.26.1>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.34>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Sat Sep 19 17:21:18 2020: C<Module> L<TokyoCabinet|TokyoCabinet>
+
+=over 4
+
+=item *
+
+C<installed into: /home/audris/share/perl/5.26.1>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.34>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Sat Sep 19 17:23:17 2020: C<Module> L<Digest::FNV::XS|Digest::FNV::XS>
+
+=over 4
+
+=item *
+
+C<installed into: /home/audris/share/perl/5.26.1>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.02>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+

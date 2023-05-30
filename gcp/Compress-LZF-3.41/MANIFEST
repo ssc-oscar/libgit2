@@ -1,0 +1,20 @@
+README
+Changes
+MANIFEST
+COPYING
+COPYING.Artistic
+COPYING.GNU
+Makefile.PL
+t/00_load.t
+t/01_run.t
+t/02_freeze.t
+LZF.pm
+LZF.xs
+lzfP.h
+lzf_c.c
+lzf_d.c
+
+debian/control
+debian/changelog
+debian/rules
+META.yml                                 Module meta-data (added by MakeMaker)
