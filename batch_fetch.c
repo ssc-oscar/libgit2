@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<time.h>
 #include<openssl/sha.h>
 #include<sys/types.h>
 #include<sys/stat.h>
@@ -33,7 +34,7 @@ void recursive_mkdir(char *dir_path)
     pdir[i] = 0;
     struct stat st = {0};
     if(stat(pdir, &st) == -1) {
-        mkdir(pdir, 0700);
+        recursive_mkdir(pdir);
     }
     mkdir(dir_path, 0700);
     if(pdir)
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
         FILE *out = fopen(obj_file_path, "wb");
         fwrite(dest, compressSize, 1, out);
         fclose(out);
-
+        
         char *refs_heads_path = malloc(strlen(path) + strlen("/.git/refs/heads/") + strlen(heads_name) + 10);
         memset(refs_heads_path, 0, strlen(path) + strlen("/.git/refs/heads/") + strlen(heads_name) + 10);
         strcpy(refs_heads_path, path);
