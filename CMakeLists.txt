@@ -629,6 +629,13 @@ ADD_EXECUTABLE(grabft grabft.c common.c)
 target_link_libraries (grabft git2)
 ADD_EXECUTABLE(grabtag grabtag.c common.c)
 target_link_libraries (grabtag git2)
+# The prebuilt libgit2.so references SSL_get_peer_certificate, which OpenSSL 3.x
+# renamed (SSL_get1_peer_certificate). The grab* tools only do local bare-repo
+# reads and never make TLS calls, so the symbol is never bound at runtime; allow
+# the undefined shlib symbol so these executables link against OpenSSL 3.x.
+# (Do NOT add this to network tools like batch_fetch / get_new_commits — they
+# genuinely use TLS and would crash at runtime on the missing symbol.)
+SET_TARGET_PROPERTIES(grabc grabf grabft grabtag PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
 
 # Workaround for Cmake bug #0011240 (see http://public.kitware.com/Bug/view.php?id=11240)
 # Win64+MSVC+static libs = linker error

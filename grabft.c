@@ -4,24 +4,32 @@
 #include <unistd.h>
 #include "common.h"
 
-static void print_tree (git_tree *tree)
+static void print_tree (git_repository *repo, git_tree *tree)
 {
-  size_t i, max_i = (int) git_tree_entrycount(tree);
+  size_t max_i = git_tree_entrycount(tree);
   char tidstr[GIT_OID_HEXSZ + 1];
-  char c = 0;
   git_oid_tostr (tidstr, sizeof(tidstr), git_tree_id (tree));
   printf("tree;%s;%ld;-----\n", tidstr,  max_i);
-  for (i = 0; i < max_i; ++i) {
-    const git_tree_entry * te = git_tree_entry_byindex (tree, i);
-    const char * name = git_tree_entry_name (te);
-    git_filemode_t mode = git_tree_entry_filemode_raw (te);
-    git_otype type = git_tree_entry_type (te);
-    const git_oid * id = git_tree_entry_id (te);
-    char buf [10000];
-    sprintf (buf, "%o %s", mode, name);
-    fwrite (buf, 1, strlen (buf)+1, stdout);
-    fwrite (id, 1, 20, stdout);
+
+  /* Emit the raw, canonical object bytes verbatim so the SHA-1 matches
+     exactly.  Reconstructing entries from parsed fields is lossy: the entry
+     mode is recovered as an integer (git_tree_entry_filemode_raw) and
+     reprinted with %o, so non-canonical stored mode text (e.g. a directory
+     written as "040000" with a leading zero instead of "40000") cannot be
+     reproduced, yielding a byte-different object and a mismatched SHA-1.
+     Reading the raw object from the ODB sidesteps all such normalization. */
+  git_odb *odb = NULL;
+  git_odb_object *odbobj = NULL;
+  if (git_repository_odb(&odb, repo) == 0 &&
+      git_odb_read(&odbobj, odb, git_tree_id(tree)) == 0) {
+    fwrite(git_odb_object_data(odbobj), 1, git_odb_object_size(odbobj), stdout);
+    git_odb_object_free(odbobj);
+  } else {
+    fprintf(stderr, "could not read raw object for %s\n", tidstr);
   }
+  if (odb)
+    git_odb_free(odb);
+
   printf("\ntree;%s;%ld;-----\n", tidstr, max_i);
 }
 
@@ -48,7 +56,7 @@ int main(int argc, char *argv[])
 		    "Could not resolve", l1) != 0) continue;    
     if (git_object_type (obj) == GIT_OBJ_TREE) {
       git_tree * tree = (git_tree*)obj;
-      print_tree (tree);
+      print_tree (repo, tree);
     }
     free (l1);
   }
