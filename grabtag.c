@@ -4,42 +4,31 @@
 #include <unistd.h>
 #include "common.h"
 
-static void print_signature(const char *header, const git_signature *sig)
+void show_tag (git_repository *repo, char * rname, char *oidstr, git_tag *tag)
 {
-  char sign;
-  int offset, hours, minutes;
+  /* Emit the raw, canonical object bytes verbatim so the SHA-1 matches
+     exactly.  Reconstructing the tag from parsed fields (git_tag_tagger,
+     git_tag_message, ...) is lossy: libgit2 runs every signature name and
+     email through extract_trimmed()/is_crud() (src/signature.c), which
+     strips leading/trailing whitespace and any of  . , : ; < > " \ '  .
+     A tagger such as "D.C.Y." comes back as "D.C.Y", yielding an object
+     one byte short and a mismatched SHA-1.  Reading the raw object from the
+     ODB sidesteps all libgit2 normalization. */
+  printf ("repo;%s;%s;%s\n", rname, git_tag_name(tag), oidstr);
 
-  if (!sig)
-    return;
-
-  offset = sig->when.offset;
-  if (offset < 0) {
-    sign = '-';
-    offset = -offset;
+  git_odb *odb = NULL;
+  git_odb_object *odbobj = NULL;
+  if (git_repository_odb(&odb, repo) == 0 &&
+      git_odb_read(&odbobj, odb, git_tag_id(tag)) == 0) {
+    fwrite(git_odb_object_data(odbobj), 1, git_odb_object_size(odbobj), stdout);
+    git_odb_object_free(odbobj);
   } else {
-    sign = '+';
+    fprintf(stderr, "could not read raw object for %s\n", oidstr);
   }
+  if (odb)
+    git_odb_free(odb);
 
-  hours   = offset / 60;
-  minutes = offset % 60;
-
-  printf("%s %s <%s> %ld %c%02d%02d\n",
-       header, sig->name, sig->email, (long)sig->when.time,
-       sign, hours, minutes);
-}
-
-void show_tag (char * rname, char *oidstr, git_tag *tag)
-{
-  char tidstr [GIT_OID_HEXSZ + 1];
-  git_oid_tostr (tidstr, sizeof(tidstr), git_tag_target_id(tag));
-  printf ("repo;%s;%s;%s\n", rname, git_tag_name(tag), oidstr); 
-  printf("object %s\n", tidstr);
-  printf("type %s\n", git_object_type2string(git_tag_target_type(tag)));
-  printf("tag %s\n", git_tag_name(tag));
-  print_signature("tagger", git_tag_tagger(tag));  
-  if (git_tag_message(tag))
-    printf("\n%s", git_tag_message(tag));
-  printf ("repo;%s;%s;%s\n", rname, git_tag_name(tag), oidstr); 
+  printf ("repo;%s;%s;%s\n", rname, git_tag_name(tag), oidstr);
 }
 
   
@@ -64,7 +53,7 @@ int main(int argc, char *argv[])
     }else{
       if (git_object_type (obj) == GIT_OBJ_TAG){
 	git_tag *tag = (git_tag*)obj;
-	show_tag (argv[1], l1, tag);
+	show_tag (repo, argv[1], l1, tag);
       }
     }
     free (l1);
